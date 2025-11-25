@@ -17,7 +17,7 @@ const __dirname = path.dirname(__filename)
 const app = express()
 
 // Simple root + health endpoints
-app.get('/', (_req, res) => res.json({ ok: true, message: 'Hello from CI/CD demo 👋' }))
+app.get('/', (_req, res) => res.json({ ok: true, message: 'Welcome to the API' }))
 app.get('/health', (_req, res) => res.status(200).send('OK'))
 
 // Auto-mount all routers placed under src/routes/auto
