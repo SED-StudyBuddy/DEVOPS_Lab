@@ -13,7 +13,19 @@ router.get('/api/study-rooms', (_req, res) => {
     return res.status(404).json([])
   }
 
-  res.status(200).json(studyRooms)
+  let rooms = studyRooms
+
+  if (_req.query.available) {
+    const isAvailable = _req.query.available === 'true'
+    rooms = rooms.filter(room => room.available === isAvailable)
+  }
+
+  if (_req.query.minCapacity) {
+    const minCapacity = parseInt(_req.query.minCapacity)
+    rooms = rooms.filter(room => room.capacity >= minCapacity)
+  }
+
+  res.status(200).json(rooms)
 })
 
 router.get('/api/study-rooms/:roomId', (_req, res) => {
