@@ -21,4 +21,16 @@ describe('Study Room API', () => {
     expect(res.statusCode).toEqual(404)
     expect(res.body).toHaveProperty('message', 'Study room not found')
   })
+
+  it('should filter study rooms by availability', async () => {
+    const res = await request(app).get('/api/study-rooms?available=true')
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.every(room => room.available === true)).toBe(true)
+  })
+
+  it('should filter study rooms by minimum capacity', async () => {
+    const res = await request(app).get('/api/study-rooms?minCapacity=4')
+    expect(res.statusCode).toEqual(200)
+    expect(res.body.every(room => room.capacity >= 4)).toBe(true)
+  })
 })
