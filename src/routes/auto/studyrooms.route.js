@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { studyRooms } from '../../db/data.js'
+import { studyRooms, reservations } from '../../db/data.js'
 
 const router = Router()
 
@@ -86,6 +86,10 @@ router.delete('/api/study-rooms/:roomId', (_req, res) => {
 
   if (!room) {
     return res.status(404).json({ message: 'Study room not found' })
+  }
+
+  if (reservations.some(r => r.roomId === roomId)) {
+    return res.status(400).json({ message: 'Cannot delete study room with existing reservations' })
   }
 
   const index = studyRooms.indexOf(room)
