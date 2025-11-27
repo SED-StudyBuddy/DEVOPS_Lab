@@ -39,4 +39,29 @@ router.get('/api/study-rooms/:roomId', (_req, res) => {
   res.status(200).json(studyRoom)
 })
 
+router.post('/api/study-rooms', (_req, res) => {
+  const data = _req.body
+  console.log(_req.body)
+  if (!data.name || !data.capacity || !data.equipment) {
+    return res.status(400).json({ message: 'Study room data incomplete' })
+  }
+
+  if (typeof data.name !== 'string' || typeof data.capacity !== 'number' || !Array.isArray(data.equipment)) {
+    return res.status(400).json({ message: 'Invalid study room data types' })
+  }
+
+  if (data.capacity <= 0) {
+    return res.status(400).json({ message: 'Capacity must be a positive number' })
+  }
+
+  if (studyRooms.find(room => room.name === data.name)) {
+    return res.status(409).json({ message: 'Study room with this name already exists' })
+  }
+
+  const newRoom = _req.body
+  newRoom.id = studyRooms.length + 1
+  studyRooms.push(newRoom)
+  res.status(201).json(newRoom)
+})
+
 export default router
