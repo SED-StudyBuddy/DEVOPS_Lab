@@ -33,4 +33,39 @@ describe('Study Room API', () => {
     expect(res.statusCode).toEqual(200)
     expect(res.body.every(room => room.capacity >= 4)).toBe(true)
   })
+
+  it('should create a new study room', async () => {
+    const newRoom = {
+      name: 'Study Room D',
+      capacity: 6,
+      available: true,
+      equipment: ['Projector', 'Whiteboard']
+    }
+    const res = await request(app).post('/api/study-rooms').send(newRoom)
+    expect(res.statusCode).toEqual(201)
+    expect(res.body).toHaveProperty('id')
+    expect(res.body).toMatchObject(newRoom)
+  })
+
+  it('should return 400 for incomplete study room data', async () => {
+    const incompleteRoom = {
+      name: 'Study Room E',
+      capacity: 4
+    }
+    const res = await request(app).post('/api/study-rooms').send(incompleteRoom)
+    expect(res.statusCode).toEqual(400)
+    expect(res.body).toHaveProperty('message', 'Study room data incomplete')
+  })
+
+  it('should return 409 for duplicate study room name', async () => {
+    const duplicateRoom = {
+      name: 'Study Room A',
+      capacity: 4,
+      available: true,
+      equipment: ['Whiteboard']
+    }
+    const res = await request(app).post('/api/study-rooms').send(duplicateRoom)
+    expect(res.statusCode).toEqual(409)
+    expect(res.body).toHaveProperty('message', 'Study room with this name already exists')
+  })
 })
