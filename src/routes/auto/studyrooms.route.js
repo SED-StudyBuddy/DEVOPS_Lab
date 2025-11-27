@@ -41,7 +41,6 @@ router.get('/api/study-rooms/:roomId', (_req, res) => {
 
 router.post('/api/study-rooms', (_req, res) => {
   const data = _req.body
-  console.log(_req.body)
   if (!data.name || !data.capacity || !data.equipment) {
     return res.status(400).json({ message: 'Study room data incomplete' })
   }
@@ -62,6 +61,28 @@ router.post('/api/study-rooms', (_req, res) => {
   newRoom.id = studyRooms.length + 1
   studyRooms.push(newRoom)
   res.status(201).json(newRoom)
+})
+
+router.put('/api/study-rooms/:roomId', (_req, res) => {
+  const roomId = parseInt(_req.params.roomId)
+  const studyRoom = studyRooms.find(room => room.id === roomId)
+
+  if (!studyRoom) {
+    return res.status(404).json({ message: 'Study room not found' })
+  }
+
+  const data = _req.body
+  if (data.name && typeof data.name !== 'string') {
+    return res.status(400).json({ message: 'Invalid name type' })
+  }
+  if (data.capacity && (typeof data.capacity !== 'number' || data.capacity <= 0)) {
+    return res.status(400).json({ message: 'Invalid capacity' })
+  }
+  if (data.equipment && !Array.isArray(data.equipment)) {
+    return res.status(400).json({ message: 'Invalid equipment type' })
+  }
+  Object.assign(studyRoom, data)
+  res.status(200).json(studyRoom)
 })
 
 export default router

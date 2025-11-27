@@ -68,4 +68,53 @@ describe('Study Room API', () => {
     expect(res.statusCode).toEqual(409)
     expect(res.body).toHaveProperty('message', 'Study room with this name already exists')
   })
+
+  it('should edit a study room', async () => {
+    const updatedRoom = {
+      name: 'Study Room A - Updated',
+      capacity: 5,
+      available: false,
+      equipment: ['Whiteboard', 'Projector', 'TV']
+    }
+    const res = await request(app).put('/api/study-rooms/1').send(updatedRoom)
+    expect(res.statusCode).toEqual(200)
+    expect(res.body).toHaveProperty('id', 1)
+    expect(res.body).toMatchObject(updatedRoom)
+  })
+
+  it('should return 404 when editing a non-existent study room', async () => {
+    const updatedRoom = {
+      name: 'Non-existent Room',
+      capacity: 5,
+      available: false,
+      equipment: ['Whiteboard']
+    }
+    const res = await request(app).put('/api/study-rooms/999').send(updatedRoom)
+    expect(res.statusCode).toEqual(404)
+    expect(res.body).toHaveProperty('message', 'Study room not found')
+  })
+
+  it('should return 400 for invalid data types when creating a study room', async () => {
+    const invalidRoom = {
+      name: 'Study Room F',
+      capacity: 'large',
+      available: true,
+      equipment: 'Projector'
+    }
+    const res = await request(app).post('/api/study-rooms').send(invalidRoom)
+    expect(res.statusCode).toEqual(400)
+    expect(res.body).toHaveProperty('message', 'Invalid study room data types')
+  })
+
+  it('should return 400 for non-positive capacity when creating a study room', async () => {
+    const invalidRoom = {
+      name: 'Study Room G',
+      capacity: -1,
+      available: true,
+      equipment: ['Projector']
+    }
+    const res = await request(app).post('/api/study-rooms').send(invalidRoom)
+    expect(res.statusCode).toEqual(400)
+    expect(res.body).toHaveProperty('message', 'Capacity must be a positive number')
+  })
 })
