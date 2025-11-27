@@ -24,3 +24,5 @@ router.get('/api/reservations/:reservationId', (_req, res) => {
 
   res.status(200).json(reservation)
 })
+
+export default router
