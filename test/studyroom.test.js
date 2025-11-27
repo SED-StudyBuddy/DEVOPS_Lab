@@ -117,4 +117,22 @@ describe('Study Room API', () => {
     expect(res.statusCode).toEqual(400)
     expect(res.body).toHaveProperty('message', 'Capacity must be a positive number')
   })
+
+  it('should delete a study room', async () => {
+    const res = await request(app).delete('/api/study-rooms/3')
+    expect(res.statusCode).toEqual(200)
+    expect(res.body).toHaveProperty('message', 'Study room deleted successfully')
+  })
+
+  it('should return 404 when deleting a non-existent study room', async () => {
+    const res = await request(app).delete('/api/study-rooms/999')
+    expect(res.statusCode).toEqual(404)
+    expect(res.body).toHaveProperty('message', 'Study room not found')
+  })
+
+  it('should return 400 when deleting a room with existing reservations', async () => {
+    const res = await request(app).delete('/api/study-rooms/1')
+    expect(res.statusCode).toEqual(400)
+    expect(res.body).toHaveProperty('message', 'Cannot delete study room with existing reservations')
+  })
 })
