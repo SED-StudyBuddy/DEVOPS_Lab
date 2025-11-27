@@ -85,4 +85,17 @@ router.put('/api/study-rooms/:roomId', (_req, res) => {
   res.status(200).json(studyRoom)
 })
 
+router.delete('/api/study-rooms/:roomId', (_req, res) => {
+  const roomId = parseInt(_req.params.roomId)
+  const room = studyRooms.find(room => room.id === roomId)
+
+  if (!room) {
+    return res.status(404).json({ message: 'Study room not found' })
+  }
+
+  const index = studyRooms.indexOf(room)
+  studyRooms.splice(index, 1)
+  res.status(200).json({ message: 'Study room deleted successfully' })
+})
+
 export default router
