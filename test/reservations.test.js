@@ -134,4 +134,16 @@ describe('Reservations API', () => {
     expect(res.statusCode).toEqual(400)
     expect(res.body).toHaveProperty('message', 'End time must be after start time')
   })
+
+  it('should delete an existing reservation', async () => {
+    const res = await request(app).delete('/api/reservations/1')
+    expect(res.statusCode).toEqual(200)
+    expect(res.body).toHaveProperty('message', 'Study room deleted successfully')
+  })
+
+  it('should return 404 when deleting a non-existent reservation', async () => {
+    const res = await request(app).delete('/api/reservations/999')
+    expect(res.statusCode).toEqual(404)
+    expect(res.body).toHaveProperty('message', 'Reservation not found')
+  })
 })

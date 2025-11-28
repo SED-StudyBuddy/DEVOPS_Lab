@@ -80,6 +80,17 @@ router.put('/api/reservations/:reservationId', (req, res) => {
   res.status(200).json(reservation)
 })
 
+router.delete('/api/reservations/:reservationId', (req, res) => {
+  const reservationId = parseInt(req.params.reservationId)
+  const index = reservations.findIndex(r => r.id === reservationId)
+  if (index === -1) {
+    return res.status(404).json({ message: 'Reservation not found' })
+  }
+
+  reservations.splice(index, 1)
+  res.status(200).json({ message: 'Study room deleted successfully' })
+})
+
 function validateInput (reservationInfo) {
   const { roomId, date, startTime, endTime } = reservationInfo || {}
 
