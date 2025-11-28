@@ -32,32 +32,10 @@ router.post('/api/reservations', (req, res) => {
     return res.status(400).json({ message: 'Missing required fields' })
   }
 
-  if (typeof roomId !== 'number' || typeof user !== 'string' || typeof date !== 'string' ||
-      typeof startTime !== 'string' || typeof endTime !== 'string') {
-    return res.status(400).json({ message: 'Invalid data types for fields' })
-  }
+  const result = validateInput(req.body)
 
-  if (reservations.some(r => r.roomId === roomId && r.date === date &&
-      ((startTime >= r.startTime && startTime < r.endTime) ||
-       (endTime > r.startTime && endTime <= r.endTime) ||
-       (startTime <= r.startTime && endTime >= r.endTime)))) {
-    return res.status(409).json({ message: 'Time slot already booked for this room' })
-  }
-
-  if (new Date(date) < new Date()) {
-    return res.status(400).json({ message: 'Reservation date must be in the future' })
-  }
-
-  if (startTime >= endTime) {
-    return res.status(400).json({ message: 'End time must be after start time' })
-  }
-
-  if (startTime < '08:00' || endTime > '22:00') {
-    return res.status(400).json({ message: 'Reservations must be between 08:00 and 22:00' })
-  }
-
-  if (studyRooms.findIndex(room => room.id === roomId) === -1) {
-    return res.status(400).json({ message: 'Invalid roomId' })
+  if (result.error) {
+    return res.status(result.status).json({ message: result.message })
   }
 
   const newReservation = {
@@ -69,7 +47,81 @@ router.post('/api/reservations', (req, res) => {
     endTime
   }
   reservations.push(newReservation)
-  res.status(201).json(newReservation)
+  return res.status(201).json(newReservation)
 })
+
+router.put('/api/reservations/:reservationId', (req, res) => {
+  const reservationId = parseInt(req.params.reservationId)
+
+  if (!reservationId) {
+    return res.status(400).json({ message: 'Missing reservation Id' })
+  }
+
+  const reservation = reservations.find(r => r.id === reservationId)
+
+  if (!reservation) {
+    return res.status(404).json({ message: 'Reservation not found' })
+  }
+
+  const { roomId, user, date, startTime, endTime } = req.body
+
+  const result = validateInput(req.body)
+
+  if (result.error) {
+    return res.status(result.status).json({ message: result.message })
+  }
+
+  reservation.roomId = roomId || reservation.roomId
+  reservation.user = user || reservation.user
+  reservation.date = date || reservation.date
+  reservation.startTime = startTime || reservation.startTime
+  reservation.endTime = endTime || reservation.endTime
+
+  res.status(200).json(reservation)
+})
+
+function validateInput (reservationInfo) {
+  const { roomId, date, startTime, endTime } = reservationInfo || {}
+
+  const error = (status, message) => ({ error: true, status, message })
+
+  if (reservationInfo.roomId & typeof reservationInfo.roomId !== 'number' ||
+    reservationInfo.user & typeof reservationInfo.user !== 'string' ||
+    reservationInfo.date & typeof reservationInfo.date !== 'string' ||
+    reservationInfo.startTime & typeof reservationInfo.startTime !== 'string' ||
+    reservationInfo.endTime & typeof reservationInfo.endTime !== 'string') {
+    return error(400, 'Invalid data types for fields')
+  }
+
+  if (reservationInfo.roomId & !studyRooms.some(room => room.id === roomId)) {
+    return error(400, 'Invalid roomId')
+  }
+
+  if (new Date(date) < new Date()) {
+    return error(400, 'Reservation date must be in the future')
+  }
+
+  if (startTime >= endTime) {
+    return error(400, 'End time must be after start time')
+  }
+
+  if (startTime < '08:00' || endTime > '22:00') {
+    return error(400, 'Reservations must be between 08:00 and 22:00')
+  }
+
+  const hasConflict = reservations.some(r =>
+    r.roomId === roomId &&
+    r.date === date &&
+    (
+      (startTime < r.endTime && endTime > r.startTime)
+    )
+  )
+
+  if (hasConflict) {
+    return error(409, 'Time slot already booked for this room')
+  }
+
+  return { error: false }
+}
 
 export default router
