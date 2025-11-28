@@ -109,4 +109,29 @@ describe('Reservations API', () => {
     expect(res.statusCode).toEqual(400)
     expect(res.body).toHaveProperty('message', 'Invalid roomId')
   })
+
+  it('should update an existing reservation', async () => {
+    const updatedData = {
+      user: 'Alice Updated',
+      startTime: '10:30',
+      endTime: '11:30'
+    }
+
+    const res = await request(app).put('/api/reservations/1').send(updatedData)
+    expect(res.statusCode).toEqual(200)
+    expect(res.body).toHaveProperty('id', 1)
+    expect(res.body).toMatchObject(updatedData)
+  })
+
+  it('should return 404 when updating a non-existent reservation', async () => {
+    const res = await request(app).put('/api/reservations/999').send({ user: 'NonExistent', startTime: '10:00', endTime: '11:00' })
+    expect(res.statusCode).toEqual(404)
+    expect(res.body).toHaveProperty('message', 'Reservation not found')
+  })
+
+  it('should not update a reservation with invalid data', async () => {
+    const res = await request(app).put('/api/reservations/1').send({ startTime: '12:00', endTime: '11:00' })
+    expect(res.statusCode).toEqual(400)
+    expect(res.body).toHaveProperty('message', 'End time must be after start time')
+  })
 })
