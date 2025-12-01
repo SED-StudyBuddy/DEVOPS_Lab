@@ -32,7 +32,7 @@ describe('Reservations API', () => {
     const newReservation = {
       roomId: 1,
       user: 'Charlie',
-      date: '2025-12-02',
+      date: '2025-12-30',
       startTime: '12:00',
       endTime: '13:00'
     }
@@ -58,7 +58,7 @@ describe('Reservations API', () => {
     const conflictingReservation = {
       roomId: 1,
       user: 'Dave',
-      date: '2025-12-01',
+      date: '2025-12-30',
       startTime: '10:00',
       endTime: '11:00'
     }
@@ -100,7 +100,7 @@ describe('Reservations API', () => {
     const invalidRoomReservation = {
       roomId: 999,
       user: 'Grace',
-      date: '2025-12-02',
+      date: '2025-12-30',
       startTime: '12:00',
       endTime: '13:00'
     }

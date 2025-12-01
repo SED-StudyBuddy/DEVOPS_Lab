@@ -1,6 +1,6 @@
 const reservations = [
-  { id: 1, roomId: 1, user: 'Alice', date: '2025-12-01', startTime: '10:00', endTime: '11:00' },
-  { id: 2, roomId: 2, user: 'Bob', date: '2025-12-01', startTIme: '11:00', endTIme: '12:00' }
+  { id: 1, roomId: 1, user: 'Alice', date: '2025-12-30', startTime: '10:00', endTime: '11:00' },
+  { id: 2, roomId: 2, user: 'Bob', date: '2025-12-30', startTIme: '11:00', endTIme: '12:00' }
 ]
 export { reservations }
 
