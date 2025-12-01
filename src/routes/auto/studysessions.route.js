@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid'
 
 const router = Router()
 
-// Mock in-memory data for Study Sessions
+// -----------------------------------------------------------------------------
+// In-memory mock data
+// -----------------------------------------------------------------------------
 let studySessions = [
   {
     id: 's-101',
@@ -13,7 +15,11 @@ let studySessions = [
     location: 'Room 8204-Sorbonne Campus',
     type: 'presential',
     capacity: 6,
-    participants: ['marie.dupont@esilv.fr', 'user1@esilv.fr', 'user2@esilv.fr'],
+    participants: [
+      'marie.dupont@esilv.fr',
+      'user1@esilv.fr',
+      'user2@esilv.fr'
+    ],
     ownerId: 'marie.dupont@esilv.fr',
     public: true,
     zoomLink: null
@@ -46,60 +52,80 @@ let studySessions = [
   }
 ]
 
-// Helper function for basic validation
+// -----------------------------------------------------------------------------
+// Validation helper
+// -----------------------------------------------------------------------------
 const validateSessionData = (data, isNew = false) => {
-  if (!data.name || !data.subject || !data.dateTime || !data.location || !data.type || !data.capacity) {
+  if (
+    !data.name ||
+    !data.subject ||
+    !data.dateTime ||
+    !data.location ||
+    !data.type ||
+    !data.capacity
+  ) {
     return 'Missing required fields: name, subject, dateTime, location, type, capacity.'
   }
-  if (typeof data.name !== 'string' || typeof data.subject !== 'string' || typeof data.location !== 'string' || typeof data.type !== 'string') {
+
+  if (
+    typeof data.name !== 'string' ||
+    typeof data.subject !== 'string' ||
+    typeof data.location !== 'string' ||
+    typeof data.type !== 'string'
+  ) {
     return 'Invalid data types for string fields.'
   }
+
   if (typeof data.capacity !== 'number' || data.capacity <= 0) {
     return 'Capacity must be a positive number.'
   }
+
   if (isNew && !data.ownerId) {
     return 'Missing ownerId for a new session.'
   }
-  // Simple date validation
+
   if (isNaN(Date.parse(data.dateTime))) {
     return 'Invalid date/time format.'
   }
+
   return null
 }
 
-// GET /api/study-sessions → Get all sessions with optional filters
+// -----------------------------------------------------------------------------
+// GET /api/study-sessions → Get all sessions (filters optional)
+// -----------------------------------------------------------------------------
 router.get('/api/study-sessions', (req, res) => {
-  let filteredSessions = studySessions
-
+  let filtered = [...studySessions]
   const { subject, type, minCapacity } = req.query
 
   if (subject) {
-    filteredSessions = filteredSessions.filter(session =>
-      session.subject.toLowerCase().includes(subject.toLowerCase())
+    filtered = filtered.filter(s =>
+      s.subject.toLowerCase().includes(subject.toLowerCase())
     )
   }
 
   if (type) {
-    filteredSessions = filteredSessions.filter(session => session.type === type)
+    filtered = filtered.filter(s => s.type === type)
   }
 
   if (minCapacity) {
     const minCap = parseInt(minCapacity)
     if (!isNaN(minCap)) {
-      filteredSessions = filteredSessions.filter(session => session.capacity >= minCap)
+      filtered = filtered.filter(s => s.capacity >= minCap)
     }
   }
 
-  // Sort by date/time (most recent first)
-  filteredSessions.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
+  // Sort by date
+  filtered.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime))
 
-  res.status(200).json(filteredSessions)
+  res.status(200).json(filtered)
 })
 
-// GET /api/study-sessions/:id → Get a specific session
+// -----------------------------------------------------------------------------
+// GET /api/study-sessions/:id → Get specific session
+// -----------------------------------------------------------------------------
 router.get('/api/study-sessions/:id', (req, res) => {
-  const id = req.params.id
-  const session = studySessions.find(s => s.id === id)
+  const session = studySessions.find(s => s.id === req.params.id)
 
   if (!session) {
     return res.status(404).json({ message: 'Study session not found' })
@@ -108,81 +134,87 @@ router.get('/api/study-sessions/:id', (req, res) => {
   res.status(200).json(session)
 })
 
+// -----------------------------------------------------------------------------
 // POST /api/study-sessions → Create a new session
+// -----------------------------------------------------------------------------
 router.post('/api/study-sessions', (req, res) => {
   const data = req.body
-
   const validationError = validateSessionData(data, true)
+
   if (validationError) {
     return res.status(400).json({ message: validationError })
   }
 
-  // Basic check for time overlap in the same location (simplified)
+  // Conflict check: same location + same time
   const isConflict = studySessions.some(
-    s => s.location === data.location && new Date(s.dateTime).getTime() === new Date(data.dateTime).getTime()
+    s =>
+      s.location === data.location &&
+      new Date(s.dateTime).getTime() === new Date(data.dateTime).getTime()
   )
+
   if (isConflict) {
-    return res.status(409).json({ message: 'A session already exists at this location and time.' })
+    return res.status(409).json({
+      message: 'A session already exists at this location and time.'
+    })
   }
 
   const newSession = {
     id: uuidv4(),
     ...data,
-    participants: data.participants || [data.ownerId], // Owner is automatically a participant
+    participants: data.participants || [data.ownerId],
     public: data.public !== undefined ? data.public : true,
-    zoomLink: data.type === 'virtual' ? `https://zoom.us/j/${Math.floor(Math.random() * 1e10)}` : null
+    zoomLink:
+      data.type === 'virtual'
+        ? `https://zoom.us/j/${Math.floor(Math.random() * 1e10)}`
+        : null
   }
 
   studySessions.push(newSession)
   res.status(201).json(newSession)
 })
 
-// PUT /api/study-sessions/:id → Update a session (Reschedule/Edit)
+// -----------------------------------------------------------------------------
+// PUT /api/study-sessions/:id → Update a session
+// -----------------------------------------------------------------------------
 router.put('/api/study-sessions/:id', (req, res) => {
-  const id = req.params.id
-  const session = studySessions.find(s => s.id === id)
+  const session = studySessions.find(s => s.id === req.params.id)
 
   if (!session) {
     return res.status(404).json({ message: 'Study session not found' })
   }
 
   const data = req.body
-  // Partial validation, checking for existing keys and types
   const validationError = validateSessionData({ ...session, ...data })
+
   if (validationError) {
-    // We only check for format consistency here for PUT
     if (data.capacity && (typeof data.capacity !== 'number' || data.capacity <= 0)) {
       return res.status(400).json({ message: 'Capacity must be a positive number.' })
     }
+
     if (data.dateTime && isNaN(Date.parse(data.dateTime))) {
-        return res.status(400).json({ message: 'Invalid date/time format.' })
+      return res.status(400).json({ message: 'Invalid date/time format.' })
     }
-    // General check for string types
+
     const stringFields = ['name', 'subject', 'location', 'type', 'ownerId']
     for (const field of stringFields) {
-        if (data[field] && typeof data[field] !== 'string') {
-            return res.status(400).json({ message: `Invalid data type for ${field}.` })
-        }
+      if (data[field] && typeof data[field] !== 'string') {
+        return res.status(400).json({
+          message: `Invalid data type for ${field}.`
+        })
+      }
     }
   }
 
-  // Update logic (simplified: assuming user is authorized, e.g., session.ownerId === req.user.id)
   Object.assign(session, data)
-
-  // In a real app, a notification would be sent here (Functional Requirement 3.1.5)
-  // NotificationService.sendUpdateAlert(session.participants, session.id)
-
   res.status(200).json(session)
 })
 
+// -----------------------------------------------------------------------------
 // DELETE /api/study-sessions/:id → Delete a session
+// -----------------------------------------------------------------------------
 router.delete('/api/study-sessions/:id', (req, res) => {
-  const id = req.params.id
   const initialLength = studySessions.length
-  
-  // Assuming authorization is handled (only owner/admin can delete)
-
-  studySessions = studySessions.filter(s => s.id !== id)
+  studySessions = studySessions.filter(s => s.id !== req.params.id)
 
   if (studySessions.length === initialLength) {
     return res.status(404).json({ message: 'Study session not found' })
@@ -191,11 +223,12 @@ router.delete('/api/study-sessions/:id', (req, res) => {
   res.status(200).json({ message: 'Study session deleted successfully' })
 })
 
-// POST /api/study-sessions/:id/join → Join a session (Functional Requirement 3.1.6)
+// -----------------------------------------------------------------------------
+// POST /api/study-sessions/:id/join → Join a session
+// -----------------------------------------------------------------------------
 router.post('/api/study-sessions/:id/join', (req, res) => {
-  const id = req.params.id
-  const userId = req.body.userId // The ID of the user trying to join
-  const session = studySessions.find(s => s.id === id)
+  const { userId } = req.body
+  const session = studySessions.find(s => s.id === req.params.id)
 
   if (!session) {
     return res.status(404).json({ message: 'Study session not found' })
@@ -206,37 +239,48 @@ router.post('/api/study-sessions/:id/join', (req, res) => {
   }
 
   if (session.participants.length >= session.capacity) {
-    return res.status(409).json({ message: 'Cannot join session: Maximum capacity reached' })
+    return res.status(409).json({
+      message: 'Cannot join session: Maximum capacity reached'
+    })
   }
 
-  // Basic check for private session (Functional Requirement 3.1.6: allow join/request to join)
   if (!session.public) {
-      // In a real app, this would queue a request to be accepted by the owner (3.1.3)
-      return res.status(202).json({ message: 'Request to join sent to session owner.' })
+    return res.status(202).json({
+      message: 'Request to join sent to session owner.'
+    })
   }
 
   session.participants.push(userId)
-  res.status(200).json({ message: 'Successfully joined session', participants: session.participants })
+  res.status(200).json({
+    message: 'Successfully joined session',
+    participants: session.participants
+  })
 })
 
+// -----------------------------------------------------------------------------
 // POST /api/study-sessions/:id/leave → Leave a session
+// -----------------------------------------------------------------------------
 router.post('/api/study-sessions/:id/leave', (req, res) => {
-  const id = req.params.id
-  const userId = req.body.userId // The ID of the user trying to leave
-  const session = studySessions.find(s => s.id === id)
+  const { userId } = req.body
+  const session = studySessions.find(s => s.id === req.params.id)
 
   if (!session) {
     return res.status(404).json({ message: 'Study session not found' })
   }
 
-  const initialParticipantsCount = session.participants.length
+  const oldCount = session.participants.length
   session.participants = session.participants.filter(p => p !== userId)
 
-  if (session.participants.length === initialParticipantsCount) {
-    return res.status(409).json({ message: 'User is not a participant in this session.' })
+  if (session.participants.length === oldCount) {
+    return res.status(409).json({
+      message: 'User is not a participant in this session.'
+    })
   }
 
-  res.status(200).json({ message: 'Successfully left session', participants: session.participants })
+  res.status(200).json({
+    message: 'Successfully left session',
+    participants: session.participants
+  })
 })
 
 export default router
