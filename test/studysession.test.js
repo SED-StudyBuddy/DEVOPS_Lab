@@ -191,7 +191,6 @@ describe('Study Session API', () => {
       'message',
       'Study session deleted successfully'
     )
-
     const getRes = await request(app).get(`/api/study-sessions/${sessionId}`)
     expect(getRes.statusCode).toEqual(404)
   })
