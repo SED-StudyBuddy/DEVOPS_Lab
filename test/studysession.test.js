@@ -3,62 +3,6 @@ import app from '../src/app.js'
 import { describe, expect, it } from 'vitest'
 
 // -----------------------------------------------------------------------------
-// Mock data (initial database state)
-// -----------------------------------------------------------------------------
-const initialSessions = [
-  {
-    id: 101,
-    name: 'L2 Mathematical Analysis Revisions',
-    subject: 'Mathematics',
-    dateTime: '2025-12-15T14:00:00Z',
-    location: 'Room 8204-Sorbonne Campus',
-    type: 'presential',
-    capacity: 6,
-    participants: [
-      'marie.dupont@esilv.fr',
-      'user1@esilv.fr',
-      'user2@esilv.fr'
-    ],
-    ownerId: 'marie.dupont@esilv.fr',
-    public: true
-  },
-  {
-    id: 102,
-    name: 'Geopolitical Debate',
-    subject: 'Political Science',
-    dateTime: '2025-12-16T18:00:00Z',
-    location: 'Café "Le Procope"',
-    type: 'external',
-    capacity: 8,
-    participants: [],
-    ownerId: 'lucas.bernard@sciencespo.fr',
-    public: true
-  },
-  {
-    id: 103,
-    name: 'Private C++ Practice',
-    subject: 'Computer Science',
-    dateTime: '2025-12-17T10:00:00Z',
-    location: 'Virtual (Zoom)',
-    type: 'virtual',
-    capacity: 4,
-    participants: [
-      'owner1@esilv.fr',
-      'invitee1@esilv.fr'
-    ],
-    ownerId: 'owner1@esilv.fr',
-    public: false
-  }
-]
-
-// -----------------------------------------------------------------------------
-// Mock data for reservations (not used deeply but kept for completeness)
-// -----------------------------------------------------------------------------
-const reservations = [
-  { sessionId: 101, room: 'Room 8204-Sorbonne Campus', date: '2025-12-15' }
-]
-
-// -----------------------------------------------------------------------------
 // Test users
 // -----------------------------------------------------------------------------
 const USER_ID = 'student_test@esilv.fr'
@@ -68,10 +12,6 @@ const OTHER_USER_ID = 'another_student@esilv.fr'
 // Test suite
 // -----------------------------------------------------------------------------
 describe('Study Session API', () => {
-  
-  // ---------------------------------------------------------------------------
-  // Test 1: Fetch all sessions
-  // ---------------------------------------------------------------------------
   it('should fetch all study sessions', async () => {
     const res = await request(app).get('/api/study-sessions')
     expect(res.statusCode).toEqual(200)
@@ -105,7 +45,6 @@ describe('Study Session API', () => {
   // ---------------------------------------------------------------------------
   it('should filter study sessions by subject (Mathematics)', async () => {
     const res = await request(app).get('/api/study-sessions?subject=Mathematics')
-
     expect(res.statusCode).toEqual(200)
     expect(res.body.every(s => s.subject === 'Mathematics')).toBe(true)
     expect(res.body.length).toEqual(1)
