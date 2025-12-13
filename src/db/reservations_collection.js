@@ -5,12 +5,8 @@ const COLLECTION = 'reservations'
 
 export async function getReservations (filter = {}) {
   const db = await getDb()
-
-  if (filter.roomId) {
-    filter.roomId = new ObjectId(filter.roomId)
-  }
-
-  return db.collection(COLLECTION).find(filter).toArray()
+  const reservations = await db.collection(COLLECTION).find(filter).toArray()
+  return reservations
 }
 
 export async function getReservationById (id) {

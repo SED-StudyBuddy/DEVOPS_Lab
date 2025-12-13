@@ -1,110 +1,87 @@
-import * as roomsCollection from '../db/studyrooms_collection.js'
-import * as reservationsCollection from '../db/reservations_collection.js'
+import * as service from '../services/studyrooms_service.js'
+import { DomainError } from '../errors/DomainError.js'
 
-const error = (status, message) => {
-  const e = new Error(message)
-  e.status = status
-  return e
-}
-
-export async function getAllRooms (query) {
-  const filters = {}
-
-  if (query.minCapacity) {
-    const minCapacity = Number(query.minCapacity)
-    if (isNaN(minCapacity)) {
-      throw error(400, 'Invalid minCapacity')
+export async function getStudyRooms (req, res) {
+  try {
+    const rooms = await service.getStudyRooms(req.query)
+    res.json(rooms)
+  } catch (err) {
+    if (err instanceof DomainError) {
+      return res.status(400).json({ message: err.message })
     }
-    filters.capacity = { $gte: minCapacity }
+    res.status(500).json({ message: 'Internal server error' })
   }
-
-  if (query.available !== undefined) {
-    filters.available = query.available === 'true'
-  }
-
-  return roomsCollection.getAllRooms(filters)
 }
 
-export async function getRoomById (roomId) {
-  const room = await roomsCollection.getRoomById(roomId)
-  if (!room) throw error(404, 'Study room not found')
-  return room
+export async function getStudyRoomById (req, res) {
+  try {
+    const room = await service.getStudyRoomById(req.params.roomId)
+    res.json(room)
+  } catch (err) {
+    if (err instanceof DomainError) {
+      return res.status(404).json({ message: err.message })
+    }
+    res.status(500).json({ message: 'Internal server error' })
+  }
 }
 
-export async function createRoom (data) {
-  if (!data.name || !data.capacity || !data.equipment) {
-    throw error(400, 'Study room data incomplete')
-  }
+export async function createStudyRoom (req, res) {
+  try {
+    const room = await service.createStudyRoom(req.body)
+    res.status(201).json(room)
+  } catch (err) {
+    if (err instanceof DomainError) {
+      const statusMap = {
+        INVALID_INPUT: 400,
+        DUPLICATE_ROOM: 409
+      }
 
-  if (
-    typeof data.name !== 'string' ||
-    typeof data.capacity !== 'number' ||
-    !Array.isArray(data.equipment)
-  ) {
-    throw error(400, 'Invalid study room data types')
+      return res
+        .status(statusMap[err.code] || 400)
+        .json({ message: err.message })
+    }
+    res.status(500).json({ message: 'Internal server error' })
   }
-
-  if (data.capacity <= 0) {
-    throw error(400, 'Capacity must be a positive number')
-  }
-
-  const existing = await roomsCollection.getRoomByName(data.name)
-  if (existing) {
-    throw error(409, 'Study room with this name already exists')
-  }
-
-  const room = {
-    name: data.name,
-    capacity: data.capacity,
-    equipment: data.equipment,
-    available: true,
-    createdAt: new Date()
-  }
-
-  return roomsCollection.createRoom(room)
 }
 
-export async function updateRoom (roomId, data) {
-  const room = await roomsCollection.getRoomById(roomId)
-  if (!room) throw error(404, 'Study room not found')
+export async function updateStudyRoom (req, res) {
+  try {
+    const room = await service.updateStudyRoom(
+      req.params.roomId,
+      req.body
+    )
+    res.status(200).json(room)
+  } catch (err) {
+    if (err instanceof DomainError) {
+      const statusMap = {
+        ROOM_NOT_FOUND: 404,
+        INVALID_INPUT: 400,
+        DUPLICATE_ROOM: 409
+      }
 
-  if (data.name && typeof data.name !== 'string') {
-    throw error(400, 'Invalid name type')
+      return res
+        .status(statusMap[err.code] || 400)
+        .json({ message: err.message })
+    }
+    res.status(500).json({ message: 'Internal server error' })
   }
-
-  if (data.capacity && (typeof data.capacity !== 'number' || data.capacity <= 0)) {
-    throw error(400, 'Invalid capacity')
-  }
-
-  if (data.equipment && !Array.isArray(data.equipment)) {
-    throw error(400, 'Invalid equipment type')
-  }
-
-  return roomsCollection.updateRoom(roomId, data)
 }
 
-export async function deleteRoom (roomId) {
-  const room = await roomsCollection.getRoomById(roomId)
-  if (!room) throw error(404, 'Study room not found')
+export async function deleteStudyRoom (req, res) {
+  try {
+    await service.deleteStudyRoom(req.params.roomId)
+    res.json({ message: 'Study room deleted successfully' })
+  } catch (err) {
+    if (err instanceof DomainError) {
+      const statusMap = {
+        ROOM_NOT_FOUND: 404,
+        ROOM_HAS_RESERVATIONS: 400
+      }
 
-  const hasReservations = await reservationsCollection.hasReservationsForRoom(roomId)
-  if (hasReservations) {
-    throw error(400, 'Cannot delete study room with existing reservations')
+      return res
+        .status(statusMap[err.code] || 400)
+        .json({ message: err.message })
+    }
+    res.status(500).json({ message: 'Internal server error' })
   }
-
-  await roomsCollection.deleteRoom(roomId)
-}
-
-export function filterStudyRooms (rooms = [], query = {}) {
-  let result = rooms
-
-  if (query.available !== undefined) {
-    result = result.filter(r => r.available === query.available)
-  }
-
-  if (query.minCapacity !== undefined) {
-    result = result.filter(r => r.capacity >= query.minCapacity)
-  }
-
-  return result
 }

@@ -3,37 +3,37 @@ import { ObjectId } from 'mongodb'
 
 const COLLECTION = 'studyrooms'
 
-export async function getAllRooms (filter = {}) {
+export async function getAllStudyRooms (filter = {}) {
   const db = await getDb()
   return db.collection(COLLECTION).find(filter).toArray()
 }
 
-export async function getRoomById (id) {
+export async function getStudyRoomById (id) {
   const db = await getDb()
   return db.collection(COLLECTION).findOne({ _id: new ObjectId(id) })
 }
 
-export async function getRoomByName (name) {
+export async function getStudyRoomByName (name) {
   const db = await getDb()
   return db.collection(COLLECTION).findOne({ name })
 }
 
-export async function createRoom (room) {
+export async function createStudyRoom (room) {
   const db = await getDb()
   const result = await db.collection(COLLECTION).insertOne(room)
   return { ...room, _id: result.insertedId }
 }
 
-export async function updateRoom (id, updates) {
+export async function updateStudyRoom (id, updates) {
   const db = await getDb()
   await db.collection(COLLECTION).updateOne(
     { _id: new ObjectId(id) },
     { $set: updates }
   )
-  return getRoomById(id)
+  return getStudyRoomById(id)
 }
 
-export async function deleteRoom (id) {
+export async function deleteStudyRoom (id) {
   const db = await getDb()
   await db.collection(COLLECTION).deleteOne({ _id: new ObjectId(id) })
 }

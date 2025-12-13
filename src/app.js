@@ -5,11 +5,15 @@
  *  - Auto-mount all routers in src/routes/auto/*.route.js
  *  - Global error handler (consistent JSON for errors)
  */
+import dotenv from 'dotenv'
 import express from 'express'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { errorHandler } from './utils/errorHandler.js'
+import { connectToDb } from './db/mongo.js'
+
+dotenv.config()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -17,6 +21,9 @@ const __dirname = path.dirname(__filename)
 const app = express()
 app.use(express.json())
 
+export async function initApp () {
+  await connectToDb()
+}
 // Simple root + health endpoints
 app.get('/', (_req, res) => res.json({ ok: true, message: 'Welcome to the API' }))
 app.get('/health', (_req, res) => res.status(200).send('OK'))
