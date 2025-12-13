@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "vitest run",
+    "test": "npm run _test",
+    "_test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint ."
   },

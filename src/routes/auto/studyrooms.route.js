@@ -1,100 +1,55 @@
 import { Router } from 'express'
-import { studyRooms, reservations } from '../../db/data.js'
+import * as studyRoomsController from '../../controllers/studyrooms_controller.js'
 
 const router = Router()
 
-router.get('/api/study-rooms', (_req, res) => {
-  if (!studyRooms || studyRooms.length === 0) {
-    return res.status(404).json([])
+router.get('/api/study-rooms', async (req, res) => {
+  try {
+    const rooms = await studyRoomsController.getAllRooms(req.query)
+    console.log(rooms)
+    res.status(200).json(rooms)
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
   }
-
-  let rooms = studyRooms
-
-  if (_req.query.available) {
-    const isAvailable = _req.query.available === 'true'
-    rooms = rooms.filter(room => room.available === isAvailable)
-  }
-
-  if (_req.query.minCapacity) {
-    const minCapacity = parseInt(_req.query.minCapacity)
-    rooms = rooms.filter(room => room.capacity >= minCapacity)
-  }
-
-  res.status(200).json(rooms)
 })
 
-router.get('/api/study-rooms/:roomId', (_req, res) => {
-  const roomId = parseInt(_req.params.roomId)
-  const studyRoom = studyRooms.find(room => room.id === roomId)
-
-  if (!studyRoom) {
-    return res.status(404).json({ message: 'Study room not found' })
+router.get('/api/study-rooms/:roomId', async (req, res) => {
+  try {
+    const room = await studyRoomsController.getRoomById(req.params.roomId)
+    res.status(200).json(room)
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
   }
-
-  res.status(200).json(studyRoom)
 })
 
-router.post('/api/study-rooms', (_req, res) => {
-  const data = _req.body
-  if (!data.name || !data.capacity || !data.equipment) {
-    return res.status(400).json({ message: 'Study room data incomplete' })
+router.post('/api/study-rooms', async (req, res) => {
+  try {
+    const room = await studyRoomsController.createRoom(req.body)
+    res.status(201).json(room)
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
   }
-
-  if (typeof data.name !== 'string' || typeof data.capacity !== 'number' || !Array.isArray(data.equipment)) {
-    return res.status(400).json({ message: 'Invalid study room data types' })
-  }
-
-  if (data.capacity <= 0) {
-    return res.status(400).json({ message: 'Capacity must be a positive number' })
-  }
-
-  if (studyRooms.find(room => room.name === data.name)) {
-    return res.status(409).json({ message: 'Study room with this name already exists' })
-  }
-
-  const newRoom = _req.body
-  newRoom.id = studyRooms.length + 1
-  studyRooms.push(newRoom)
-  res.status(201).json(newRoom)
 })
 
-router.put('/api/study-rooms/:roomId', (_req, res) => {
-  const roomId = parseInt(_req.params.roomId)
-  const studyRoom = studyRooms.find(room => room.id === roomId)
-
-  if (!studyRoom) {
-    return res.status(404).json({ message: 'Study room not found' })
+router.put('/api/study-rooms/:roomId', async (req, res) => {
+  try {
+    const room = await studyRoomsController.updateRoom(
+      req.params.roomId,
+      req.body
+    )
+    res.status(200).json(room)
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
   }
-
-  const data = _req.body
-  if (data.name && typeof data.name !== 'string') {
-    return res.status(400).json({ message: 'Invalid name type' })
-  }
-  if (data.capacity && (typeof data.capacity !== 'number' || data.capacity <= 0)) {
-    return res.status(400).json({ message: 'Invalid capacity' })
-  }
-  if (data.equipment && !Array.isArray(data.equipment)) {
-    return res.status(400).json({ message: 'Invalid equipment type' })
-  }
-  Object.assign(studyRoom, data)
-  res.status(200).json(studyRoom)
 })
 
-router.delete('/api/study-rooms/:roomId', (_req, res) => {
-  const roomId = parseInt(_req.params.roomId)
-  const room = studyRooms.find(room => room.id === roomId)
-
-  if (!room) {
-    return res.status(404).json({ message: 'Study room not found' })
+router.delete('/api/study-rooms/:roomId', async (req, res) => {
+  try {
+    await studyRoomsController.deleteRoom(req.params.roomId)
+    res.status(200).json({ message: 'Study room deleted successfully' })
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
   }
-
-  if (reservations.some(r => r.roomId === roomId)) {
-    return res.status(400).json({ message: 'Cannot delete study room with existing reservations' })
-  }
-
-  const index = studyRooms.indexOf(room)
-  studyRooms.splice(index, 1)
-  res.status(200).json({ message: 'Study room deleted successfully' })
 })
 
 export default router
