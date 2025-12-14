@@ -2,6 +2,11 @@ import request from 'supertest'
 import app from '../src/app.js'
 import { describe, expect, it } from 'vitest'
 
+function uniqueEmail (prefix = 'testuser') {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`
+}
+
+
 describe('Users API', () => {
   it('GET /api/users returns an array of users', async () => {
     const res = await request(app).get('/api/users')
@@ -14,7 +19,7 @@ describe('Users API', () => {
   it('POST /api/users creates a new user when data is valid', async () => {
     const payload = {
       fullName: 'Gabin Salon',
-      email: 'gabin.salon@example.com',
+      email: uniqueEmail('gabin.salon@example.com'),
       role: 'student',
       school: 'ESILV',
       schoolYear: 4,
@@ -26,7 +31,7 @@ describe('Users API', () => {
       .send(payload)
 
     expect(res.status).toBe(201)
-    expect(res.body).toHaveProperty('id')
+    expect(res.body).toHaveProperty('_id')
     expect(res.body.fullName).toBe(payload.fullName)
     expect(res.body.email).toBe(payload.email)
   })
@@ -34,14 +39,14 @@ describe('Users API', () => {
   it('POST /api/users returns 400 when required fields are missing', async () => {
     const res = await request(app)
       .post('/api/users')
-      .send({ email: 'no-name@example.com' })
+      .send({ email: uniqueEmail('no-name@example.com') })
 
     expect(res.status).toBe(400)
     expect(res.body).toHaveProperty('message')
   })
 
   it('GET /api/users/:id returns 404 for unknown user', async () => {
-    const res = await request(app).get('/api/users/999999')
+    const res = await request(app).get('/api/users/507f1f77bcf86cd799439011')
     expect(res.status).toBe(404)
   })
 
@@ -51,11 +56,11 @@ describe('Users API', () => {
       .post('/api/users')
       .send({
         fullName: 'Temp User',
-        email: 'temp@example.com',
+        email: uniqueEmail('temp@example.com'),
         role: 'student'
       })
 
-    const id = createRes.body.id
+    const id = createRes.body._id
 
     const res = await request(app)
       .put(`/api/users/${id}`)
@@ -71,11 +76,11 @@ describe('Users API', () => {
       .post('/api/users')
       .send({
         fullName: 'Delete Me',
-        email: 'deleteme@example.com',
+        email: uniqueEmail('deleteme@example.com'),
         role: 'student'
       })
 
-    const id = createRes.body.id
+    const id = createRes.body._id
 
     const delRes = await request(app).delete(`/api/users/${id}`)
     expect(delRes.status).toBe(200)
