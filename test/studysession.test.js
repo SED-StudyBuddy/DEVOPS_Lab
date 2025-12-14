@@ -26,7 +26,7 @@ describe('Study Session API', () => {
     const res = await request(app).get('/api/study-sessions/101')
 
     expect(res.statusCode).toEqual(200)
-    expect(res.body).toHaveProperty('id', 101)
+    expect(res.body).toHaveProperty('id', '101')
     expect(res.body.name).toEqual('L2 Mathematical Analysis Revisions')
   })
 
@@ -113,7 +113,7 @@ describe('Study Session API', () => {
       .send(updatedSession)
 
     expect(res.statusCode).toEqual(200)
-    expect(res.body).toHaveProperty('id', 101)
+    expect(res.body).toHaveProperty('id', '101')
     expect(res.body.dateTime).toEqual(updatedSession.dateTime)
     expect(res.body.capacity).toEqual(updatedSession.capacity)
   })
