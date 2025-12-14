@@ -6,7 +6,6 @@ function uniqueEmail (prefix = 'testuser') {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`
 }
 
-
 describe('Users API', () => {
   it('GET /api/users returns an array of users', async () => {
     const res = await request(app).get('/api/users')
