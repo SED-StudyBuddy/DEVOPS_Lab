@@ -8,7 +8,7 @@ const router = Router()
 // -----------------------------------------------------------------------------
 let studySessions = [
   {
-    id: 's-101',
+    id: '101',
     name: 'L2 Mathematical Analysis Revisions',
     subject: 'Mathematics',
     dateTime: '2025-12-15T14:00:00Z',
