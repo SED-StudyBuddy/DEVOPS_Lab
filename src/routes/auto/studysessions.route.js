@@ -25,7 +25,7 @@ let studySessions = [
     zoomLink: null
   },
   {
-    id: 's-102',
+    id: '102',
     name: 'Geopolitical Debate',
     subject: 'Political Science',
     dateTime: '2025-12-16T18:00:00Z',
@@ -38,7 +38,7 @@ let studySessions = [
     zoomLink: null
   },
   {
-    id: 's-103',
+    id: '103',
     name: 'Private C++ Practice',
     subject: 'Computer Science',
     dateTime: '2025-12-17T10:00:00Z',
