@@ -7,48 +7,22 @@ const router = Router()
 // In-memory mock data
 // -----------------------------------------------------------------------------
 let studySessions = [
-  {
-    id: '101',
-    name: 'L2 Mathematical Analysis Revisions',
+    {
+    _id: '692d7376362876fd8bf12dc5',
+    sessionName: 'L2 Mathematical Analysis Revisions',
     subject: 'Mathematics',
     dateTime: '2025-12-15T14:00:00Z',
-    location: 'Room 8204-Sorbonne Campus',
-    type: 'presential',
+    roomId: '692d72b1a10abba2468ec063',
+    sessionType: 'presential',
     capacity: 6,
-    participants: [
-      'marie.dupont@esilv.fr',
-      'user1@esilv.fr',
-      'user2@esilv.fr'
+    participantsIds: [
+      '692d7376362876fd8bf12dc3',
+      '692d7376362876fd8bf12dc4',
+      '693ec399ad877d97c0eba385'
     ],
-    ownerId: 'marie.dupont@esilv.fr',
+    ownerId: '692d7376362876fd8bf12dc3',
     public: true,
     zoomLink: null
-  },
-  {
-    id: '102',
-    name: 'Geopolitical Debate',
-    subject: 'Political Science',
-    dateTime: '2025-12-16T18:00:00Z',
-    location: 'Café "Le Procope"',
-    type: 'external',
-    capacity: 8,
-    participants: ['lucas.bernard@sciencespo.fr'],
-    ownerId: 'lucas.bernard@sciencespo.fr',
-    public: true,
-    zoomLink: null
-  },
-  {
-    id: '103',
-    name: 'Private C++ Practice',
-    subject: 'Computer Science',
-    dateTime: '2025-12-17T10:00:00Z',
-    location: 'Virtual (Zoom)',
-    type: 'virtual',
-    capacity: 4,
-    participants: ['owner1@esilv.fr', 'invitee1@esilv.fr'],
-    ownerId: 'owner1@esilv.fr',
-    public: false,
-    zoomLink: 'https://zoom.us/j/1234567890'
   }
 ]
 
