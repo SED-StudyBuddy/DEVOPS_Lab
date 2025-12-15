@@ -1,0 +1,21 @@
+{
+  "name": "devops_lab",
+  "version": "1.0.0",
+  "description": "This repository is a **teaching template** for a 4-student DevOps mini-project.\r It demonstrates a realistic workflow: **PLAN (Jira) → CODE (Git/VS Code) → BUILD/TEST (GitHub Actions) → REVIEW (PRs) → DEPLOY (optional)**.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SED-StudyBuddy/DEVOPS_Lab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SED-StudyBuddy/DEVOPS_Lab/issues"
+  },
+  "homepage": "https://github.com/SED-StudyBuddy/DEVOPS_Lab#readme"
+}
