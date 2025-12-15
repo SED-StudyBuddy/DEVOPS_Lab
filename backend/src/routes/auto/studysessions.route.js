@@ -7,7 +7,7 @@ const router = Router()
 // In-memory mock data
 // -----------------------------------------------------------------------------
 let studySessions = [
-    {
+  {
     _id: '692d7376362876fd8bf12dc5',
     sessionName: 'L2 Mathematical Analysis Revisions',
     subject: 'Mathematics',
