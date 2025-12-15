@@ -51,7 +51,7 @@ export async function createStudySession (data) {
   }
 
   // Assurez-vous d'ajouter ici le créateur/propriétaire de la session
-  // data.creatorId = new ObjectId(data.creatorId) 
+  // data.creatorId = new ObjectId(data.creatorId)
 
   return sessionsCollection.createStudySession(data)
 }
@@ -136,10 +136,10 @@ function validateStudySessionInput (data, { partial = false } = {}) {
   }
 
   if (startTime !== undefined && (typeof startTime !== 'string' || isNaN(Date.parse(startTime)))) {
-      throw new DomainError(
-        'INVALID_INPUT',
-        'Invalid startTime format (must be a valid date string)'
-      )
+    throw new DomainError(
+      'INVALID_INPUT',
+      'Invalid startTime format (must be a valid date string)'
+    )
   }
 
   if (
