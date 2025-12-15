@@ -12,7 +12,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: backend/project-code
+        working-directory: backend
 
     steps:
       - name: Checkout repository
