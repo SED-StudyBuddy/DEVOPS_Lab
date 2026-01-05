@@ -1,5 +1,5 @@
 import { connectToDb } from '../db/mongo.js'
-import * as studySessionsCollection from '../db/studysessions_collection.js'
+import * as studySessionsCollection from '../services/studysessions_service.js'
 
 export async function getStudySessions (req, res, next) {
   try {
@@ -136,4 +136,4 @@ export async function leaveStudySession (req, res, next) {
   } catch (err) {
     next(err)
   }
-}
+};
