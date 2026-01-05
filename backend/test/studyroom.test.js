@@ -1,70 +1,163 @@
-const StudyRoom = require('../models/studyRoom'); // Assurez-vous que le chemin est bon
-// OU si vous utilisez "import" : import StudyRoom from '../models/studyRoom.js';
+import request from 'supertest'
 
-// 1. CREATE (POST /api/study-rooms)
-exports.createStudyRoom = async (req, res) => {
-  try {
-    const newRoom = new StudyRoom(req.body);
-    const savedRoom = await newRoom.save();
-    // Le test attend un statut 201
-    res.status(201).json(savedRoom);
-  } catch (error) {
-    // C'est ici que l'erreur 500 actuelle est générée
-    console.error("Error creating room:", error);
-    res.status(500).json({ message: error.message });
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+
+import { getDb, closeDb } from '../src/db/mongo.js'
+
+import { ObjectId } from 'mongodb'
+
+import app, { initApp } from '../src/app.js'
+
+
+
+describe('Study Rooms API (MongoDB integration)', () => {
+
+  let db
+
+  let testRoomId
+
+
+
+  const testRoom = {
+
+    name: 'TEST_ROOM__DO_NOT_USE',
+
+    capacity: 99,
+
+    available: true,
+
+    equipment: ['TestBoard']
+
   }
-};
 
-// 2. GET BY ID (GET /api/study-rooms/:id)
-exports.getStudyRoomById = async (req, res) => {
-  try {
-    const room = await StudyRoom.findById(req.params.id);
-    
-    // Le test "returns 404 when fetching deleted room" attend ceci :
-    if (!room) {
-      return res.status(404).json({ message: 'Study room not found' });
+
+
+  beforeAll(async () => {
+
+    await initApp()
+
+    db = await getDb()
+
+
+
+    await db.collection('studyrooms').deleteMany({
+
+      name: testRoom.name
+
+    })
+
+  }, 20_000)
+
+
+
+  afterAll(async () => {
+
+    if (testRoomId) {
+
+      await db.collection('studyrooms').deleteOne({
+
+        _id: new ObjectId(testRoomId)
+
+      })
+
     }
 
-    res.status(200).json(room);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
-// 3. UPDATE (PUT /api/study-rooms/:id)
-exports.updateStudyRoom = async (req, res) => {
-  try {
-    // { new: true } permet de renvoyer l'objet modifié, ce que le test vérifie
-    const updatedRoom = await StudyRoom.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
 
-    if (!updatedRoom) {
-      return res.status(404).json({ message: 'Study room not found' });
-    }
+    await closeDb()
 
-    res.status(200).json(updatedRoom);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  })
 
-// 4. DELETE (DELETE /api/study-rooms/:id)
-exports.deleteStudyRoom = async (req, res) => {
-  try {
-    const deletedRoom = await StudyRoom.findByIdAndDelete(req.params.id);
 
-    if (!deletedRoom) {
-      return res.status(404).json({ message: 'Study room not found' });
-    }
 
-    // Le test attend un message contenant "deleted"
-    res.status(200).json({ message: 'Study room deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  it('creates a new study room', async () => {
 
-// Si vous avez une fonction pour "getAll", vous pouvez la laisser telle quelle.
+    const res = await request(app)
+
+      .post('/api/study-rooms')
+
+      .send(testRoom)
+
+
+
+    expect(res.status).toBe(201)
+
+    expect(res.body).toHaveProperty('_id')
+
+    expect(res.body.name).toBe(testRoom.name)
+
+
+
+    testRoomId = res.body._id
+
+  })
+
+
+
+  it('fetches the created study room by id', async () => {
+
+    const res = await request(app)
+
+      .get(`/api/study-rooms/${testRoomId}`)
+
+
+
+    expect(res.status).toBe(200)
+
+    expect(res.body.name).toBe(testRoom.name)
+
+  })
+
+
+
+  it('updates the study room', async () => {
+
+    const res = await request(app)
+
+      .put(`/api/study-rooms/${testRoomId}`)
+
+      .send({
+
+        capacity: 50,
+
+        available: false
+
+      })
+
+
+
+    expect(res.status).toBe(200)
+
+    expect(res.body.capacity).toBe(50)
+
+    expect(res.body.available).toBe(false)
+
+  })
+
+
+
+  it('deletes the study room', async () => {
+
+    const res = await request(app)
+
+      .delete(`/api/study-rooms/${testRoomId}`)
+
+
+
+    expect(res.status).toBe(200)
+
+    expect(res.body.message).toMatch(/deleted/i)
+
+  })
+
+
+
+  it('returns 404 when fetching deleted room', async () => {
+
+    const res = await request(app)
+
+      .get(`/api/study-rooms/${testRoomId}`)
+
+
+
+    expect(res.status).toBe(404)
