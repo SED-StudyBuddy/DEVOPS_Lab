@@ -20,7 +20,7 @@ export default function NavBar() {
           >
             <Nav.Link as={Link} to="/sessions">Study Sessions</Nav.Link>
             <Nav.Link as={Link} to="/rooms">Study Rooms</Nav.Link>
-            <Nav.Link as={Link} to="/reservations">My Reservations</Nav.Link>
+            <Nav.Link as={Link} to="/reservations">My Sessions</Nav.Link>
             <Nav.Link as={Link} to="/about">About</Nav.Link>
 
             <NavDropdown title="My Account" id="navbarScrollingDropdown" className="position-absolute end-0 mx-5">
