@@ -1,122 +1,93 @@
-import * as sessionsCollection from '../db/studysessions_collection.js' // CHANGEMENT: Nouvelle collection
-import * as reservationsCollection from '../db/reservations_collection.js' // Garder les réservations si elles sont liées aux sessions
+import * as roomsCollection from '../db/studyrooms_collection.js'
+import * as reservationsCollection from '../db/reservations_collection.js'
 import { DomainError } from '../errors/DomainError.js'
 import { ObjectId } from 'mongodb'
 
-// =========================================================================
-// Remplacement de getStudyRooms par getStudySessions
-// =========================================================================
+export async function getStudyRooms (query) {
+  let rooms = await roomsCollection.getAllStudyRooms()
 
-export async function getStudySessions (query) {
-  let sessions = await sessionsCollection.getAllStudySessions()
-
-  if (query.isPublic !== undefined) { // Exemple de filtre sur les sessions
-    const isPublic = query.isPublic === 'true'
-    sessions = sessions.filter(s => s.isPublic === isPublic)
+  if (query.available !== undefined) {
+    const available = query.available === 'true'
+    rooms = rooms.filter(r => r.available === available)
   }
 
-  if (query.minDurationMinutes !== undefined) { // Exemple de filtre sur la durée
-    const minDurationMinutes = Number(query.minDurationMinutes)
-    sessions = sessions.filter(s => s.durationMinutes >= minDurationMinutes)
+  if (query.minCapacity !== undefined) {
+    const minCapacity = Number(query.minCapacity)
+    rooms = rooms.filter(r => r.capacity >= minCapacity)
   }
 
-  return sessions
+  return rooms
 }
 
-// =========================================================================
-// Remplacement de getStudyRoomById par getStudySessionById
-// =========================================================================
-
-export async function getStudySessionById (sessionId) {
-  const session = await sessionsCollection.getStudySessionById(sessionId)
-  if (!session) {
-    throw new DomainError('SESSION_NOT_FOUND', 'Study session not found') // CHANGEMENT: Erreur SESSION_NOT_FOUND
+export async function getStudyRoomById (roomId) {
+  const room = await roomsCollection.getStudyRoomById(roomId)
+  if (!room) {
+    throw new DomainError('ROOM_NOT_FOUND', 'Study room not found')
   }
-  return session
+  return room
 }
 
-// =========================================================================
-// Remplacement de createStudyRoom par createStudySession
-// =========================================================================
+export async function createStudyRoom (data) {
+  validateStudyRoomInput(data)
 
-export async function createStudySession (data) {
-  validateStudySessionInput(data)
-
-  const existing = await sessionsCollection.getStudySessionByName(data.name) // Vérification par nom
+  const existing = await roomsCollection.getStudyRoomByName(data.name)
   if (existing) {
     throw new DomainError(
-      'DUPLICATE_SESSION', // CHANGEMENT: Erreur DUPLICATE_SESSION
-      'Study session with this name already exists'
+      'DUPLICATE_ROOM',
+      'Study room with this name already exists'
     )
   }
 
-  // Assurez-vous d'ajouter ici le créateur/propriétaire de la session
-  // data.creatorId = new ObjectId(data.creatorId)
-
-  return sessionsCollection.createStudySession(data)
+  return roomsCollection.createStudyRoom(data)
 }
 
-// =========================================================================
-// Remplacement de updateStudyRoom par updateStudySession
-// =========================================================================
-
-export async function updateStudySession (sessionId, data) {
-  const session = await sessionsCollection.getStudySessionById(sessionId)
-  if (!session) {
-    throw new DomainError('SESSION_NOT_FOUND', 'Study session not found') // CHANGEMENT: Erreur SESSION_NOT_FOUND
+export async function updateStudyRoom (roomId, data) {
+  const room = await roomsCollection.getStudyRoomById(roomId)
+  if (!room) {
+    throw new DomainError('ROOM_NOT_FOUND', 'Study room not found')
   }
 
-  validateStudySessionInput(data, { partial: true })
+  validateStudyRoomInput(data, { partial: true })
 
   if (data.name !== undefined) {
-    const existing = await sessionsCollection.getStudySessionByName(data.name)
-    if (existing && existing._id.toString() !== sessionId.toString()) {
+    const existing = await roomsCollection.getStudyRoomByName(data.name)
+    if (existing && existing._id.toString() !== roomId.toString()) {
       throw new DomainError(
-        'DUPLICATE_SESSION', // CHANGEMENT: Erreur DUPLICATE_SESSION
-        'Study session with this name already exists'
+        'DUPLICATE_ROOM',
+        'Study room with this name already exists'
       )
     }
   }
 
-  return sessionsCollection.updateStudySession(sessionId, data)
+  return roomsCollection.updateStudyRoom(roomId, data)
 }
 
-// =========================================================================
-// Remplacement de deleteStudyRoom par deleteStudySession
-// =========================================================================
-
-export async function deleteStudySession (sessionId) {
-  const session = await sessionsCollection.getStudySessionById(sessionId)
-  if (!session) {
-    throw new DomainError('SESSION_NOT_FOUND', 'Study session not found') // CHANGEMENT: Erreur SESSION_NOT_FOUND
+export async function deleteStudyRoom (roomId) {
+  const room = await roomsCollection.getStudyRoomById(roomId)
+  if (!room) {
+    throw new DomainError('ROOM_NOT_FOUND', 'Study room not found')
   }
 
-  // Vérification de dépendances (ex: reservations liées à cette session)
-  const reservations = await reservationsCollection.getReservations({ sessionId: new ObjectId(sessionId) }) // CHANGEMENT: Chercher par sessionId
+  const reservations = await reservationsCollection.getReservations({ roomId: new ObjectId(roomId) })
 
   if (reservations.length > 0) {
     throw new DomainError(
-      'SESSION_HAS_RESERVATIONS', // CHANGEMENT: Erreur SESSION_HAS_RESERVATIONS
-      'Cannot delete study session with existing reservations'
+      'ROOM_HAS_RESERVATIONS',
+      'Cannot delete study room with existing reservations'
     )
   }
 
-  await sessionsCollection.deleteStudySession(sessionId)
+  await roomsCollection.deleteStudyRoom(roomId)
 }
 
-// =========================================================================
-// Remplacement de validateStudyRoomInput par validateStudySessionInput
-// (Adapté pour des champs de session comme name, topic, startTime)
-// =========================================================================
-
-function validateStudySessionInput (data, { partial = false } = {}) {
-  const { name, topic, startTime, durationMinutes } = data
+function validateStudyRoomInput (data, { partial = false } = {}) {
+  const { name, capacity, equipment } = data
 
   if (!partial) {
-    if (!name || !topic || !startTime || durationMinutes === undefined) {
+    if (!name || capacity === undefined || !equipment) {
       throw new DomainError(
         'INVALID_INPUT',
-        'Study session data incomplete (requires name, topic, startTime, durationMinutes)'
+        'Study room data incomplete'
       )
     }
   }
@@ -128,27 +99,20 @@ function validateStudySessionInput (data, { partial = false } = {}) {
     )
   }
 
-  if (topic !== undefined && typeof topic !== 'string') {
-    throw new DomainError(
-      'INVALID_INPUT',
-      'Invalid topic type'
-    )
-  }
-
-  if (startTime !== undefined && (typeof startTime !== 'string' || isNaN(Date.parse(startTime)))) {
-    throw new DomainError(
-      'INVALID_INPUT',
-      'Invalid startTime format (must be a valid date string)'
-    )
-  }
-
   if (
-    durationMinutes !== undefined &&
-    (typeof durationMinutes !== 'number' || durationMinutes <= 0)
+    capacity !== undefined &&
+    (typeof capacity !== 'number' || capacity <= 0)
   ) {
     throw new DomainError(
       'INVALID_INPUT',
-      'Duration must be a positive number in minutes'
+      'Capacity must be a positive number'
+    )
+  }
+
+  if (equipment !== undefined && !Array.isArray(equipment)) {
+    throw new DomainError(
+      'INVALID_INPUT',
+      'Invalid equipment type'
     )
   }
 }
