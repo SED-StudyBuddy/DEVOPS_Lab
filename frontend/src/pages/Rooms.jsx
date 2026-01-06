@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Container, Row, Col, Card, Badge, Form, Button, Stack } from 'react-bootstrap'
+
 
 export default function Rooms() {
     const ENDPOINT = '/api/study-rooms'
@@ -53,61 +55,103 @@ export default function Rooms() {
     console.log(rooms)
 
     return (
-        <div className="container">
-            <h1>Study Rooms</h1>
+        <Container className="py-4">
+      <div className="mb-4">
+        <h1 className="mb-1">Study Rooms</h1>
+        <div className="text-muted">
+          Find and reserve available study spaces
+        </div>
+      </div>
 
-      <div className="filters">
-        <input
+      <Stack
+        direction="horizontal"
+        gap={2}
+        className="mb-4 flex-wrap"
+      >
+        <Form.Control
           placeholder="Search by name"
           value={search}
           onChange={e => setSearch(e.target.value)}
+          style={{ maxWidth: 220 }}
         />
 
-        <select
+        <Form.Select
           value={availability}
           onChange={e => setAvailability(e.target.value)}
+          style={{ maxWidth: 180 }}
         >
           <option value="all">All</option>
           <option value="true">Available</option>
           <option value="false">Unavailable</option>
-        </select>
+        </Form.Select>
 
-        <input
+        <Form.Control
           type="number"
           placeholder="Min capacity"
           value={minCapacity}
           onChange={e => setMinCapacity(e.target.value)}
+          style={{ maxWidth: 160 }}
         />
 
-        <button onClick={fetchRooms} disabled={loading}>
+        <Button onClick={fetchRooms} disabled={loading}>
           {loading ? 'Loading…' : 'Refresh'}
-        </button>
-      </div>
+        </Button>
+      </Stack>
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <div className="text-danger mb-3">{error}</div>
+      )}
 
-      <div className="grid">
+      <Row xs={1} sm={2} md={3} lg={3} className="g-4">
         {filteredRooms.map(room => (
-          <div key={room._id} className="card">
-            <div className="card-header">
-              <h3>{room.name}</h3>
-              <span className={room.available ? 'available' : 'unavailable'}>
-                {room.available ? 'Available' : 'Unavailable'}
-              </span>
-            </div>
+          <Col key={room._id}>
+            <Card className="h-100 shadow-sm">
+              <Card.Body>
+                <div className="d-flex justify-content-center align-items-start mb-2">
+                  <Card.Title className="fs-5 mb-0">
+                    {room.name}
+                  </Card.Title>
+                </div>
+                <div>
+                    <Badge bg={room.available ? 'success' : 'danger'}>
+                    {room.available ? 'Available' : 'Unavailable'}
+                  </Badge>
+                </div>
 
-            <p><strong>Capacity:</strong> {room.capacity}</p>
+                <Card.Text className="text-muted mb-2">
+                  Capacity: <strong>{room.capacity}</strong>
+                </Card.Text>
 
-            {room.equipment?.length > 0 && (
-              <div className="equipment">
-                {room.equipment.map((e, i) => (
-                  <span key={i} className="tag">{e}</span>
-                ))}
-              </div>
-            )}
-          </div>
+                {room.equipment?.length > 0 && (
+                  <div className="d-flex flex-wrap gap-1 justify-content-center">
+                    {room.equipment.map((e, i) => (
+                      <Badge
+                        key={i}
+                        bg="secondary"
+                        pill
+                        className="fw-normal"
+                      >
+                        {e}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </Card.Body>
+
+              <Card.Footer className="bg-transparent border-0">
+                <Button
+                  size="sm"
+                  variant="outline-primary"
+                  className="w-100"
+                  disabled={!room.available}
+                >
+                  Reserve
+                </Button>
+              </Card.Footer>
+            </Card>
+          </Col>
         ))}
-      </div>
-    </div>
+      </Row>
+    </Container>
     )
 }

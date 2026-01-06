@@ -8,6 +8,8 @@ import Profile from './pages/Profile.jsx'
 import About from './pages/About.jsx'
 import Admin from './pages/Admin.jsx'
 import Reservations from './pages/Reservations.jsx'
+import Registration from './pages/Registration.jsx'
+import Login from './pages/Login.jsx'
 
 export default function App () {
   return (
@@ -19,6 +21,8 @@ export default function App () {
       <Route path="/about" element={<About />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/reservations" element={<Reservations />} />
+      <Route path="/register" element={<Registration />} />
+      <Route path="/login" element={<Login />} />
     </Routes></>
   )
 }
