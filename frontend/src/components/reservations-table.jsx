@@ -23,21 +23,20 @@ const deleteReservation = async id => {
 }
 
 const saveReservation = async data => {
-  if (data._id) {
     await fetch(`/api/reservations/${data._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        "user": data.user,
+        "roomId": data.roomId,
+        "date": data.date,
+        "startTime": data.startTime,
+        "endTime": data.endTime
+      })
     })
-  } else {
-    await fetch('/api/reservations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    })
-  }
 
   setShowModal(false)
+  setReservations(prev => prev.map(r => r._id === data._id ? data : r))
 }
 
   useEffect(() => {
