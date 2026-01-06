@@ -31,12 +31,35 @@ export default function RoomsTable() {
   }
 
   const handleSave = async (updatedRoom) => {
+    if (!updatedRoom._id) {
+      // Create new room
+      const res = await fetch('/api/study-rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          "name": updatedRoom.name,
+          "capacity": updatedRoom.capacity,
+            "equipment": updatedRoom.equipment,
+            "available": updatedRoom.available
+        }),
+        })
+        const saved = await res.json()
+        setRooms(prev => [...prev, saved])
+        setShowModal(false)
+        return
+    }
+    
+    // Update existing room
     const res = await fetch(`/api/study-rooms/${updatedRoom._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedRoom),
+      body: JSON.stringify({
+        "name": updatedRoom.name,
+        "capacity": updatedRoom.capacity,
+        "equipment": updatedRoom.equipment,
+        "available": updatedRoom.available
+      }),
     })
-
     const saved = await res.json()
 
     setRooms(prev =>

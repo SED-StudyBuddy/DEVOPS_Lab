@@ -23,7 +23,9 @@ export default function RoomModal({ show, room, onClose, onSave }) {
   const handleSubmit = () => {
     onSave({
       ...form,
-      equipment: form.equipment.split(',').map(e => e.trim())
+      capacity: Number(form.capacity),
+      equipment: form.equipment.split(',').map(e => e.trim()),
+      available: Boolean(form.available)
     })
   }
 
