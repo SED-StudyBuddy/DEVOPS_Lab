@@ -34,9 +34,12 @@ export async function updateStudySession (id, updates) {
 
 export async function deleteStudySession (id) {
   if (!ObjectId.isValid(id)) throw new DomainError('INVALID_SESSION', 'Invalid sessionId format')
+
   const session = await studySessionsCollection.getStudySessionById(id)
   if (!session) throw new DomainError('SESSION_NOT_FOUND', 'Study session not found')
-  await studySessionsCollection.deleteStudySession(id)
+
+  // Correction ici : On retourne le résultat de l'appel à la collection
+  return await studySessionsCollection.deleteStudySession(id)
 }
 
 export async function joinStudySession (id, userId) {
@@ -60,4 +63,4 @@ function validateStudySession (data, { partial = false } = {}) {
   if (!partial && (!name || !subject || !dateTime || !ownerId)) {
     throw new DomainError('INVALID_INPUT', 'Missing required fields')
   }
-};
+}
