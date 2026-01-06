@@ -16,6 +16,11 @@ export async function getStudyRooms (query) {
     rooms = rooms.filter(r => r.capacity >= minCapacity)
   }
 
+  if (query.name !== undefined) {
+    const nameRegex = new RegExp(query.name, 'i')
+    rooms = rooms.filter(r => nameRegex.test(r.name))
+  }
+
   return rooms
 }
 

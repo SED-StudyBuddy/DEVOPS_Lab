@@ -3,19 +3,29 @@ import * as roomsCollection from '../db/studyrooms_collection.js'
 import { DomainError } from '../errors/DomainError.js'
 import { ObjectId } from 'mongodb'
 
-export async function getReservations (roomId = undefined) {
+export async function getReservations (query = {}) {
   const filter = {}
 
-  if (
-    roomId &&
-    roomId !== 'undefined' &&
-    roomId !== 'null'
-  ) {
-    if (!ObjectId.isValid(roomId)) {
+  if (query.roomId && query.roomId !== 'all') {
+    if (!ObjectId.isValid(query.roomId)) {
       throw new DomainError('INVALID_ROOM', 'Invalid roomId format')
     }
+    filter.roomId = new ObjectId(query.roomId)
+  }
 
-    filter.roomId = new ObjectId(roomId)
+  if (query.user) {
+    filter.user = {
+      $regex: query.user,
+      $options: 'i'
+    }
+  }
+
+  if (query.date) {
+    filter.date = query.date
+    if (query.time) {
+      filter.startTime = { $lte: query.time }
+      filter.endTime = { $gte: query.time }
+    }
   }
 
   return reservationsCollection.getReservations(filter)

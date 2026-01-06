@@ -8,6 +8,11 @@ export default function ReservationsTable() {
   const [reservations, setReservations] = useState([])
 const [showModal, setShowModal] = useState(false)
 const [selectedReservation, setSelectedReservation] = useState(null)
+const [userSearch, setUserSearch] = useState('')
+const [roomFilter, setRoomFilter] = useState('all')
+const [dateFilter, setDateFilter] = useState('')
+const [timeFilter, setTimeFilter] = useState('')
+
 
 const openEdit = reservation => {
   setSelectedReservation(reservation)
@@ -46,10 +51,34 @@ const saveReservation = async data => {
   }, [])
 
   useEffect(() => {
-    fetch('/api/reservations')
-      .then(res => res.json())
-      .then(setReservations)
-  }, [])
+  const controller = new AbortController()
+
+  const fetchReservations = async () => {
+    try {
+      const params = new URLSearchParams()
+
+      if (userSearch) params.append('user', userSearch)
+      if (roomFilter !== 'all') params.append('roomId', roomFilter)
+      if (dateFilter) params.append('date', dateFilter)
+      if (timeFilter) params.append('time', timeFilter)
+
+      const res = await fetch(`/api/reservations?${params.toString()}`, {
+        signal: controller.signal
+      })
+
+      const data = await res.json()
+      setReservations(data)
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error(err)
+      }
+    }
+  }
+
+  fetchReservations()
+
+  return () => controller.abort()
+}, [userSearch, roomFilter, dateFilter, timeFilter])
 
   const roomMap = useMemo(() => {
     return Object.fromEntries(
@@ -67,6 +96,41 @@ const saveReservation = async data => {
 
 return (
     <>
+  <div className="d-flex gap-2 mb-3 px-5">
+    <input
+      className="form-control"
+      placeholder="Search by user"
+      value={userSearch}
+      onChange={e => setUserSearch(e.target.value)}
+    />
+
+    <select
+      className="form-select"
+      value={roomFilter}
+      onChange={e => setRoomFilter(e.target.value)}
+    >
+      <option value="all">All rooms</option>
+        {rooms.map(room => (
+          <option key={room._id} value={room._id}>
+           {room.name}
+          </option>
+      ))}
+    </select>
+
+      <input
+        type="date"
+        className="form-control"
+        value={dateFilter}
+        onChange={e => setDateFilter(e.target.value)}
+      />
+
+      <input
+        type="time"
+        className="form-control"
+        value={timeFilter}
+        onChange={e => setTimeFilter(e.target.value)}
+      />
+    </div>
       <Table striped bordered hover>
         <thead>
           <tr>

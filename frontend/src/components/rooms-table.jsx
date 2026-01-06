@@ -10,6 +10,7 @@ export default function RoomsTable() {
   const [rooms, setRooms] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [selectedRoom, setSelectedRoom] = useState(null)
+  const [search, setSearch] = useState('')
   const [availability, setAvailability] = useState('all')
 
 useEffect(() => {
@@ -19,6 +20,7 @@ useEffect(() => {
     try {
       const params = new URLSearchParams()
 
+      if (search) params.append('name', search)
       if (availability !== 'all') params.append('available', availability)
 
       const res = await fetch(`/api/study-rooms?${params.toString()}`, {
@@ -37,7 +39,7 @@ useEffect(() => {
   fetchRooms()
 
   return () => controller.abort()
-}, [availability])
+}, [availability, search])
 
   const handleEdit = (room) => {
     setSelectedRoom(room)
@@ -96,6 +98,14 @@ useEffect(() => {
   return (
     <>
     <div className="d-flex gap-2 mb-3 px-5">
+        <Col>
+        <Form.Control className="h-100"
+          type="text"
+          placeholder="Search room by name"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        </Col>
         <Col>
         <FloatingLabel
           controlId="floatingSelectGrid"
