@@ -9,6 +9,7 @@ import dotenv from 'dotenv'
 import express from 'express'
 import fs from 'node:fs'
 import path from 'node:path'
+import cors from 'cors'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { errorHandler } from './utils/errorHandler.js'
 import { connectToDb } from './db/mongo.js'
@@ -21,6 +22,7 @@ dotenv.config({
 })
 
 const app = express()
+app.use(cors())
 app.use(express.json())
 
 export async function initApp () {
