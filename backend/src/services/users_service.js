@@ -60,7 +60,7 @@ export async function updateUser (id, updates) {
     updates.passwordHash = await bcrypt.hash(updates.password, 10)
     delete updates.password
   }
-  if (role && !['admin', 'student'].includes(role)) {
+  if (updates.role && !['admin', 'student'].includes(updates.role)) {
     throw new DomainError('INVALID_INPUT', 'Invalid role value')
   }
 
@@ -134,4 +134,3 @@ function validateUser (data, { partial = false } = {}) {
     throw new DomainError('INVALID_INPUT', 'Invalid email format')
   }
 }
-
