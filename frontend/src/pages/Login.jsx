@@ -5,7 +5,7 @@ import Card from 'react-bootstrap/Card'
 import Form from 'react-bootstrap/Form'
 import Button from 'react-bootstrap/Button'
 
-export default function Login() {
+export default function LoginPage() {
   return (
     <Container className="py-5">
       <Row className="justify-content-center">

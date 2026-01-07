@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Container, Row, Col, Card, Badge, Form, Button, Stack } from 'react-bootstrap'
 
 
-export default function Rooms() {
+export default function RoomsPage() {
     const ENDPOINT = '/api/study-rooms'
 
   const [rooms, setRooms] = useState([])
@@ -87,10 +87,10 @@ export default function Rooms() {
 
         <Form.Control
           type="number"
-          placeholder="Min capacity"
+          placeholder="Minimun capacity"
           value={minCapacity}
           onChange={e => setMinCapacity(e.target.value)}
-          style={{ maxWidth: 160 }}
+          style={{ maxWidth: 165 }}
         />
 
         <Button onClick={fetchRooms} disabled={loading}>

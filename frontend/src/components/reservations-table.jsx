@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import Table from 'react-bootstrap/Table'
 import Button from 'react-bootstrap/Button'
 import ReservationModal from './ReservationModal'
+import { Badge } from 'react-bootstrap'
 
 export default function ReservationsTable() {
   const [rooms, setRooms] = useState([])
@@ -36,7 +37,8 @@ const saveReservation = async data => {
         "roomId": data.roomId,
         "date": data.date,
         "startTime": data.startTime,
-        "endTime": data.endTime
+        "endTime": data.endTime,
+        "status": data.status
       })
     })
 
@@ -139,6 +141,7 @@ return (
             <th>Date</th>
             <th>Start Time</th>
             <th>End Time</th>
+            <th>Status</th>
             <th>Action</th>
           </tr>
         </thead>
@@ -150,6 +153,13 @@ return (
               <td>{r.date}</td>
               <td>{r.startTime}</td>
               <td>{r.endTime}</td>
+              <td><Badge bg={
+                r.status === 'Scheduled' ? 'primary' :
+                r.status === 'Completed' ? 'success' :
+                r.status === 'Cancelled' ? 'danger' : 'secondary'
+              }>
+                {r.status}
+              </Badge></td>
               <td>
                 <Button size="sm" onClick={() => openEdit(r)}>Edit</Button>
                 <Button

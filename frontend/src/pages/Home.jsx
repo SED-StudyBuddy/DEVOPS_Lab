@@ -5,7 +5,7 @@ import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
 import { redirect } from 'react-router-dom'
 
-export default function Home() {
+export default function HomePage() {
   return (
     <>
       <div className="bg-light py-5 border-bottom">

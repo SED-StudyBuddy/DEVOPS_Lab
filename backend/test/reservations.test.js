@@ -50,8 +50,8 @@ describe('Reservations API (MongoDB integration)', () => {
     }
 
     if (testRoomId) {
-      await db.collection('studyrooms').deleteOne({
-        _id: testRoomId
+      await db.collection('studyrooms').deleteMany({
+        name: testRoom.name
       })
     }
 
