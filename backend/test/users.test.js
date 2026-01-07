@@ -2,8 +2,9 @@ import request from 'supertest'
 import app from '../src/app.js'
 import { describe, expect, it } from 'vitest'
 
-function uniqueEmail (prefix = 'testuser') {
-  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`
+function uniqueEmail (email = 'testuser@example.com') {
+  const [local, domain] = email.split('@')
+  return `${local}+${Date.now()}${Math.floor(Math.random() * 1e6)}@${domain}`
 }
 
 describe('Users API', () => {
@@ -22,7 +23,8 @@ describe('Users API', () => {
       role: 'student',
       school: 'ESILV',
       schoolYear: 4,
-      major: 'DIA'
+      major: 'DIA',
+      password: 'password123'
     }
 
     const res = await request(app)
@@ -33,6 +35,9 @@ describe('Users API', () => {
     expect(res.body).toHaveProperty('_id')
     expect(res.body.fullName).toBe(payload.fullName)
     expect(res.body.email).toBe(payload.email)
+
+    // make sure passwordHash is not leaked
+    expect(res.body).not.toHaveProperty('passwordHash')
   })
 
   it('POST /api/users returns 400 when required fields are missing', async () => {
@@ -56,9 +61,11 @@ describe('Users API', () => {
       .send({
         fullName: 'Temp User',
         email: uniqueEmail('temp@example.com'),
-        role: 'student'
+        role: 'student',
+        password: 'password123'
       })
 
+    expect(createRes.status).toBe(201)
     const id = createRes.body._id
 
     const res = await request(app)
@@ -67,6 +74,7 @@ describe('Users API', () => {
 
     expect(res.status).toBe(200)
     expect(res.body.fullName).toBe('Updated User')
+    expect(res.body).not.toHaveProperty('passwordHash')
   })
 
   it('DELETE /api/users/:id deletes an existing user', async () => {
@@ -76,9 +84,11 @@ describe('Users API', () => {
       .send({
         fullName: 'Delete Me',
         email: uniqueEmail('deleteme@example.com'),
-        role: 'student'
+        role: 'student',
+        password: 'password123'
       })
 
+    expect(createRes.status).toBe(201)
     const id = createRes.body._id
 
     const delRes = await request(app).delete(`/api/users/${id}`)
