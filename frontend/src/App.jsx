@@ -10,6 +10,7 @@ import AdminPage from './pages/Admin.jsx'
 import MySessionsPage from './pages/MySessions.jsx'
 import RegistrationPage from './pages/Registration.jsx'
 import LoginPage from './pages/Login.jsx'
+import AdminRoute from './components/AdminRoute'
 
 export default function App () {
   return (
@@ -19,7 +20,7 @@ export default function App () {
       <Route path="/rooms" element={<RoomsPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>}/>
       <Route path="/my-sessions" element={<MySessionsPage />} />
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/login" element={<LoginPage />} />

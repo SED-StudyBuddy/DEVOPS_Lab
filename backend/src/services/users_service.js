@@ -1,6 +1,7 @@
 import * as usersCollection from '../db/users_collection.js'
 import { DomainError } from '../errors/DomainError.js'
 import { ObjectId } from 'mongodb'
+import bcrypt from 'bcrypt'
 
 export async function getUsers () {
   return usersCollection.getUsers()
@@ -23,12 +24,24 @@ export async function createUser (data) {
   validateUser(data)
 
   const existing = await usersCollection.getUserByEmail(data.email)
-  if (existing) {
-    throw new DomainError('EMAIL_CONFLICT', 'User with this email already exists')
+  if (existing) throw new DomainError('EMAIL_CONFLICT', 'User with this email already exists')
+
+  const passwordHash = await bcrypt.hash(data.password, 10)
+
+  const userToCreate = {
+    fullName: data.fullName,
+    email: data.email,
+    role: data.role,
+    school: data.school || null,
+    schoolYear: data.schoolYear || null,
+    major: data.major || null,
+    passwordHash
   }
 
-  return usersCollection.createUser(data)
+  return usersCollection.createUser(userToCreate)
 }
+
+
 
 export async function updateUser (id, updates) {
   if (!ObjectId.isValid(id)) {
@@ -38,6 +51,19 @@ export async function updateUser (id, updates) {
   const existingUser = await usersCollection.getUserById(id)
   if (!existingUser) {
     throw new DomainError('USER_NOT_FOUND', 'User not found')
+  }
+  if (updates.passwordHash) {
+    throw new DomainError('INVALID_INPUT', 'passwordHash cannot be updated directly')
+  }
+  if (updates.password) {
+    if (typeof updates.password !== 'string' || updates.password.length < 6) {
+      throw new DomainError('INVALID_INPUT', 'Password must be at least 6 characters')
+    }
+    updates.passwordHash = await bcrypt.hash(updates.password, 10)
+    delete updates.password
+  }
+  if (role && !['admin', 'student'].includes(role)) {
+    throw new DomainError('INVALID_INPUT', 'Invalid role value')
   }
 
   const merged = {
@@ -71,15 +97,20 @@ export async function deleteUser (id) {
 }
 
 function validateUser (data, { partial = false } = {}) {
-  const { fullName, email, role, schoolYear } = data
+  const { fullName, email, role, schoolYear, password } = data
 
   if (!partial) {
-    if (!fullName || !email || !role) {
+    if (!fullName || !email || !role || !password) {
       throw new DomainError('INVALID_INPUT', 'Missing required fields')
     }
   }
-
-  if (fullName && typeof fullName !== 'string') {
+  if (password && typeof password !== 'string') {
+    throw new DomainError('INVALID_INPUT', 'Invalid password type')
+  }
+  if (password && password.length < 6) {
+    throw new DomainError('INVALID_INPUT', 'Password must be at least 6 characters')
+  }
+    if (fullName && typeof fullName !== 'string') {
     throw new DomainError('INVALID_INPUT', 'Invalid fullName type')
   }
 
