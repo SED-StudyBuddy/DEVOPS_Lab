@@ -41,8 +41,6 @@ export async function createUser (data) {
   return usersCollection.createUser(userToCreate)
 }
 
-
-
 export async function updateUser (id, updates) {
   if (!ObjectId.isValid(id)) {
     throw new DomainError('INVALID_USER', 'Invalid userId format')
@@ -62,7 +60,7 @@ export async function updateUser (id, updates) {
     updates.passwordHash = await bcrypt.hash(updates.password, 10)
     delete updates.password
   }
-  if (role && !['admin', 'student'].includes(role)) {
+  if (updates.role && !['admin', 'student'].includes(updates.role)) {
     throw new DomainError('INVALID_INPUT', 'Invalid role value')
   }
 
@@ -104,13 +102,19 @@ function validateUser (data, { partial = false } = {}) {
       throw new DomainError('INVALID_INPUT', 'Missing required fields')
     }
   }
+
   if (password && typeof password !== 'string') {
     throw new DomainError('INVALID_INPUT', 'Invalid password type')
   }
+
   if (password && password.length < 6) {
-    throw new DomainError('INVALID_INPUT', 'Password must be at least 6 characters')
+    throw new DomainError(
+      'INVALID_INPUT',
+      'Password must be at least 6 characters'
+    )
   }
-    if (fullName && typeof fullName !== 'string') {
+
+  if (fullName && typeof fullName !== 'string') {
     throw new DomainError('INVALID_INPUT', 'Invalid fullName type')
   }
 
