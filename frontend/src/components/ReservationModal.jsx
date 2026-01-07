@@ -15,14 +15,16 @@ export default function ReservationModal({
           user: reservation.user,
           date: reservation.date,
           startTime: reservation.startTime,
-          endTime: reservation.endTime
+          endTime: reservation.endTime,
+          status: reservation.status
         }
       : {
     roomId: '',
     user: '',
     date: '',
     startTime: '',
-    endTime: ''
+    endTime: '',
+    status: ''
   }
   )
 
@@ -101,6 +103,18 @@ export default function ReservationModal({
               value={form.endTime}
               onChange={handleChange}
             />
+          </Form.Group>
+          <Form.Group className="mb-2">
+            <Form.Label>Status</Form.Label>
+            <Form.Select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+            >
+              <option value="Scheduled">Scheduled</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Completed">Completed</option>
+            </Form.Select>
           </Form.Group>
         </Form>
       </Modal.Body>

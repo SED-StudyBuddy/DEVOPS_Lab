@@ -3,7 +3,7 @@ import Tabs from 'react-bootstrap/Tabs';
 import RoomsTable from '../components/rooms-table';
 import ReservationsTable from '../components/reservations-table';
 
-export default function Admin() {
+export default function AdminPage() {
   return (
     <>
     <h3>Admin Page</h3>
@@ -22,7 +22,7 @@ export default function Admin() {
       <Tab eventKey="rooms" title="Study Rooms">
         <RoomsTable />
       </Tab>
-      <Tab eventKey="reservations" title="Reservations">
+      <Tab eventKey="reservations" title="Room Reservations">
         <ReservationsTable />
       </Tab>
     </Tabs>
