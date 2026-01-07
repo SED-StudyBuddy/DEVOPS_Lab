@@ -43,7 +43,7 @@ export default function HomePage() {
         <h2 className="text-center fw-bold mb-5">Why StudyBuddy?</h2>
 
         <Row className="g-4">
-          <Col md={6} lg={3}>
+          <Col md={6} lg={4}>
             <Card className="h-100 shadow-sm">
               <Card.Body>
                 <Card.Title>🔍 Easy Reservations</Card.Title>
@@ -55,7 +55,7 @@ export default function HomePage() {
             </Card>
           </Col>
 
-          <Col md={6} lg={3}>
+          <Col md={6} lg={4}>
             <Card className="h-100 shadow-sm">
               <Card.Body>
                 <Card.Title>👥 Study Together</Card.Title>
@@ -67,25 +67,13 @@ export default function HomePage() {
             </Card>
           </Col>
 
-          <Col md={6} lg={3}>
+          <Col md={6} lg={4}>
             <Card className="h-100 shadow-sm">
               <Card.Body>
                 <Card.Title>💻 Hybrid Collaboration</Card.Title>
                 <Card.Text>
                   Support for both on-campus meetings and online sessions via
                   video conferencing.
-                </Card.Text>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          <Col md={6} lg={3}>
-            <Card className="h-100 shadow-sm">
-              <Card.Body>
-                <Card.Title>🔔 Smart Notifications</Card.Title>
-                <Card.Text>
-                  Get reminders, confirmations, and updates for your bookings
-                  and study sessions.
                 </Card.Text>
               </Card.Body>
             </Card>

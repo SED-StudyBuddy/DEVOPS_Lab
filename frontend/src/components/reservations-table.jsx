@@ -13,7 +13,14 @@ const [userSearch, setUserSearch] = useState('')
 const [roomFilter, setRoomFilter] = useState('all')
 const [dateFilter, setDateFilter] = useState('')
 const [timeFilter, setTimeFilter] = useState('')
+const [users, setUsers] = useState([])
 
+useEffect(() => {
+  fetch('/api/users')
+    .then(res => res.json())
+    .then(setUsers)
+    .catch(console.error)
+}, [])
 
 const openEdit = reservation => {
   setSelectedReservation(reservation)
@@ -59,7 +66,6 @@ const saveReservation = async data => {
     try {
       const params = new URLSearchParams()
 
-      if (userSearch) params.append('user', userSearch)
       if (roomFilter !== 'all') params.append('roomId', roomFilter)
       if (dateFilter) params.append('date', dateFilter)
       if (timeFilter) params.append('time', timeFilter)
@@ -88,13 +94,28 @@ const saveReservation = async data => {
     )
   }, [rooms])
 
-   const reservationsWithRoomName = useMemo(() => {
-    return reservations.map(r => ({
-      ...r,
-      roomName: roomMap[r.roomId] ?? 'Unknown room'
-    }))
-}, [reservations, roomMap])
-  
+  const userMap = useMemo(() => {
+  return Object.fromEntries(
+    users.map(u => [u._id, u.fullName])
+  )
+}, [users])
+
+
+   const reservationsWithNames = useMemo(() => {
+  return reservations.map(r => ({
+    ...r,
+    roomName: roomMap[r.roomId] ?? 'Unknown room',
+    userName: userMap[r.user] ?? 'Unknown user'
+  }))
+}, [reservations, roomMap, userMap])
+
+const filteredReservations = useMemo(() => {
+  const q = userSearch.toLowerCase()
+
+  return reservationsWithNames.filter(r =>
+    r.userName.toLowerCase().includes(q)
+  )
+}, [reservationsWithNames, userSearch])
 
 return (
     <>
@@ -146,9 +167,9 @@ return (
           </tr>
         </thead>
         <tbody>
-          {reservationsWithRoomName.map(r => (
+          {filteredReservations.map(r => (
             <tr key={r._id}>
-              <td>{r.user}</td>
+              <td>{r.userName}</td>
               <td>{r.roomName}</td>
               <td>{r.date}</td>
               <td>{r.startTime}</td>
@@ -180,6 +201,7 @@ return (
     show={showModal}
     reservation={selectedReservation}
     rooms={rooms}
+    users={users}
     onClose={() => {
       setShowModal(false)
       setSelectedReservation(null)

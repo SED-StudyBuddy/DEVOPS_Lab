@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Modal, Button, Form } from 'react-bootstrap'
+import { getStoredUser } from '../api.js'
 
 export default function ReservationModal({
   show,
   onClose,
   onSave,
   reservation,
-  rooms
+  rooms,
+  users
 }) {
   const [form, setForm] = useState(() =>
     reservation
@@ -44,20 +46,31 @@ export default function ReservationModal({
     <Modal show={show} onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>
-          {reservation ? 'Edit Reservation' : 'Add Reservation'}
+          Edit Reservation
         </Modal.Title>
       </Modal.Header>
 
       <Modal.Body>
         <Form>
+
+          {getStoredUser().role === 'admin' && (
           <Form.Group className="mb-2">
             <Form.Label>User</Form.Label>
-            <Form.Control
+            <Form.Select
               name="user"
               value={form.user}
               onChange={handleChange}
-            />
+            >
+              <option value="">Select a user</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.fullName}
+                </option>
+              ))}
+            </Form.Select>
           </Form.Group>
+
+          )}
 
           <Form.Group className="mb-2">
             <Form.Label>Room</Form.Label>

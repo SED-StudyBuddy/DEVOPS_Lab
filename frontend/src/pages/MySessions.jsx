@@ -3,6 +3,7 @@ import { Container, Tabs, Tab } from 'react-bootstrap'
 import ReservationModal from '../components/ReservationModal.jsx'
 import ReservationTable from '../components/MySessions-table.jsx'
 import SessionCards from '../components/StudySessions-cards.jsx'
+import { getStoredUser } from '../api.js'
 
 export default function MySessionsPage() {
   const [reservations, setReservations] = useState([])
@@ -12,21 +13,42 @@ export default function MySessionsPage() {
   const [rooms, setRooms] = useState([])
 
   useEffect(() => {
-    fetch('/api/reservations').then(r => r.json()).then(setReservations)
-    fetch('/api/study-sessions').then(r => r.json()).then(setSessions)
+    const user = getStoredUser()
+    fetch(`/api/reservations?user=${user._id}`).then(r => r.json()).then(setReservations)
+    fetch('/api/study-sessions').then(r => r.json()).then(setSessions) //still need to filter by user on backend/database
     fetch('/api/study-rooms').then(r => r.json()).then(setRooms)
   }, [])
 
   const now = new Date()
-  const isUpcoming = d => new Date(d) >= now
 
-  const split = list => ({
-    upcoming: list.filter(i => isUpcoming(i.date)),
-    past: list.filter(i => !isUpcoming(i.date))
-  })
+const isReservationUpcoming = (date, startTime) => {
 
-  const reservationsByTime = useMemo(() => split(reservations), [reservations])
-  const sessionsByTime = useMemo(() => split(sessions), [sessions])
+  const [hours, minutes] = startTime.split(':').map(Number)
+
+  const startDateTime = new Date(date)
+  startDateTime.setHours(hours, minutes, 0, 0)
+
+  return startDateTime >= now
+}
+
+const isSessionUpcoming = date => {
+  const sessionDate = new Date(date)
+  return sessionDate >= now
+}
+
+const splitReservationsList = list => ({
+  upcoming: list.filter(i => isReservationUpcoming(i.date, i.startTime)),
+  past: list.filter(i => !isReservationUpcoming(i.date, i.startTime))
+})
+
+const splitSessionsList = list => ({
+  upcoming: list.filter(i => isSessionUpcoming(i.date)),
+  past: list.filter(i => !isSessionUpcoming(i.date))
+})
+
+
+  const reservationsByTime = useMemo(() => splitReservationsList(reservations), [reservations])
+  const sessionsByTime = useMemo(() => splitSessionsList(sessions), [sessions])
 
   const saveReservation = async data => {
     await fetch(`/api/reservations/${data._id}`, {
@@ -85,7 +107,10 @@ export default function MySessionsPage() {
             </Tab>
 
             <Tab eventKey="past" title="Past">
-              <ReservationTable data={reservationsByTime.past} />
+              <ReservationTable 
+                data={reservationsByTime.past}
+                rooms={rooms}
+              />
             </Tab>
           </Tabs>
         </Tab>
