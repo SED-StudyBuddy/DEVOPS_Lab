@@ -30,11 +30,21 @@ export default function NavBar () {
         <Navbar.Toggle />
 
         <Navbar.Collapse>
-          {/* LEFT */}
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/sessions">Study Sessions</Nav.Link>
-            <Nav.Link as={Link} to="/rooms">Study Rooms</Nav.Link>
-            <Nav.Link as={Link} to="/my-sessions">My Sessions</Nav.Link>
+            {
+              isLoggedIn && (
+                <>
+                <Nav.Link as={Link} to="/sessions">Study Sessions</Nav.Link>
+                <Nav.Link as={Link} to="/rooms">Study Rooms</Nav.Link>
+                </>
+              )
+            }
+            
+            { 
+              isLoggedIn && !isAdmin && (
+                <Nav.Link as={Link} to="/my-sessions">My Sessions</Nav.Link>
+              )
+            }
             <Nav.Link as={Link} to="/about">About</Nav.Link>
           </Nav>
 
