@@ -2,7 +2,7 @@ import * as service from '../services/reservations_service.js'
 import { DomainError } from '../errors/DomainError.js'
 
 export async function getReservations (req, res) {
-  const reservations = await service.getReservations(req.query.roomId)
+  const reservations = await service.getReservations(req.query)
   res.json(reservations)
 }
 

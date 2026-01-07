@@ -18,7 +18,8 @@ export async function createReservation (reservation) {
   const db = await getDb()
   const result = await db.collection(COLLECTION).insertOne({
     ...reservation,
-    roomId: new ObjectId(reservation.roomId)
+    roomId: new ObjectId(reservation.roomId),
+    status: 'Scheduled'
   })
   return { ...reservation, _id: result.insertedId }
 }
