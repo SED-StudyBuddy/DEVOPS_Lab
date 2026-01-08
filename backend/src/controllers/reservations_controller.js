@@ -23,6 +23,7 @@ export async function createReservation (req, res) {
     const reservation = await service.createReservation(req.body)
     res.status(201).json(reservation)
   } catch (err) {
+    console.log(err)
     if (err instanceof DomainError) {
       const statusMap = {
         INVALID_INPUT: 400,

@@ -27,7 +27,11 @@ export default function ReservationTable({ data, onEdit, onCancel, rooms }) {
                 {r.status}
               </Badge>
             </td>
-            <td>
+            { 
+              r.status !== 'Scheduled' ? (
+                <td>N/A</td>
+              ) : (
+                <td>
               {onEdit && (
                 <Button
                   size="sm"
@@ -47,6 +51,7 @@ export default function ReservationTable({ data, onEdit, onCancel, rooms }) {
                 </Button>
               )}
             </td>
+              )}
           </tr>
         ))}
       </tbody>

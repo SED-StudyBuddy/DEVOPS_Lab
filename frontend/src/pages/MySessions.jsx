@@ -68,6 +68,17 @@ const splitSessionsList = list => ({
   setReservations(prev => prev.map(r => r._id === data._id ? data : r))
 }
 
+const onCancel = async id => {
+  window.confirm('Are you sure you want to cancel this reservation?') && await fetch(`/api/reservations/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Cancelled' })
+    })
+
+    setReservations(prev => prev.map(r => r._id === id ? { ...r, status: 'Cancelled' } : r))
+}
+
+
   return (
     <Container className="mt-4">
       <h1 className="mb-4">My Sessions</h1>
@@ -99,9 +110,7 @@ const splitSessionsList = list => ({
                   setSelectedReservation(r)
                   setShowModal(true)
                 }}
-                onCancel={id =>
-                  setReservations(prev => prev.filter(r => r._id !== id))
-                }
+                onCancel={id => onCancel(id)}
                 rooms={rooms}
               />
             </Tab>

@@ -41,35 +41,39 @@ export async function getReservationById (id) {
 
 export async function createReservation (data) {
   validateReservation(data)
-  const { roomId, date, startTime, endTime } = data
 
-  const room = await roomsCollection.getStudyRoomById(roomId)
-  if (!room) {
+  const roomExists =
+    await roomsCollection.getStudyRoomById(data.roomId)
+
+  if (!roomExists) {
     throw new DomainError('INVALID_ROOM', 'Invalid roomId')
   }
 
-  const existing = await reservationsCollection.getReservations({ roomId })
-  const conflict = existing.some(r =>
-    r.date === date &&
-    startTime < r.endTime &&
-    endTime > r.startTime
-  )
+  const conflict = await hasReservationConflict({
+    roomId: data.roomId,
+    date: data.date,
+    startTime: data.startTime,
+    endTime: data.endTime
+  })
 
   if (conflict) {
     throw new DomainError(
-      'TIME_CONFLICT',
-      'Time slot already booked for this room'
+      'ROOM_CONFLICT',
+      'This room is already reserved for the selected time'
     )
   }
 
-  return reservationsCollection.createReservation(data)
+  return reservationsCollection.createReservation({
+    ...data,
+    status: 'Scheduled'
+  })
 }
 
 export async function updateReservation (id, updates) {
-  const existingReservation =
+  const existing =
     await reservationsCollection.getReservationById(id)
 
-  if (!existingReservation) {
+  if (!existing) {
     throw new DomainError(
       'RESERVATION_NOT_FOUND',
       'Reservation not found'
@@ -77,46 +81,51 @@ export async function updateReservation (id, updates) {
   }
 
   const merged = {
-    ...existingReservation,
+    ...existing,
     ...updates
   }
 
   validateReservation(merged, { partial: true })
 
-  const { roomId, date, startTime, endTime } = merged
+  const roomExists =
+    await roomsCollection.getStudyRoomById(merged.roomId)
 
-  const room = await roomsCollection.getStudyRoomById(roomId)
-  if (!room) {
+  if (!roomExists) {
     throw new DomainError('INVALID_ROOM', 'Invalid roomId')
   }
 
-  const existing =
-    await reservationsCollection.getReservations({ filter: { roomId } })
+  if (merged.status === 'Scheduled') {
+    const conflict = await hasReservationConflict({
+      reservationId: id,
+      roomId: merged.roomId,
+      date: merged.date,
+      startTime: merged.startTime,
+      endTime: merged.endTime
+    })
 
-  const conflict = existing.some(r =>
-    r.id !== id &&
-    r.date === date &&
-    startTime < r.endTime &&
-    endTime > r.startTime
-  )
-
-  if (conflict) {
-    throw new DomainError(
-      'TIME_CONFLICT',
-      'Time slot already booked for this room'
-    )
+    if (conflict) {
+      throw new DomainError(
+        'TIME_CONFLICT',
+        'This time slot is already booked'
+      )
+    }
   }
 
   return reservationsCollection.updateReservation(id, updates)
 }
 
 export async function deleteReservation (id) {
-  const reservation = await reservationsCollection.getReservationById(id)
+  const reservation =
+    await reservationsCollection.getReservationById(id)
+
   if (!reservation) {
-    throw new DomainError('RESERVATION_NOT_FOUND', 'Reservation not found')
+    throw new DomainError(
+      'RESERVATION_NOT_FOUND',
+      'Reservation not found'
+    )
   }
 
-  await reservationsCollection.deleteReservation(id)
+  return reservationsCollection.deleteReservation(id)
 }
 
 function validateReservation (data, { partial = false } = {}) {
@@ -124,12 +133,18 @@ function validateReservation (data, { partial = false } = {}) {
 
   if (!partial) {
     if (!roomId || !user || !date || !startTime || !endTime) {
-      throw new DomainError('INVALID_INPUT', 'Missing required fields')
+      throw new DomainError(
+        'INVALID_INPUT',
+        'Missing required fields'
+      )
     }
   }
 
   if (startTime && endTime && startTime >= endTime) {
-    throw new DomainError('INVALID_TIME', 'End time must be after start time')
+    throw new DomainError(
+      'INVALID_TIME',
+      'End time must be after start time'
+    )
   }
 
   if (
@@ -152,8 +167,46 @@ function validateReservation (data, { partial = false } = {}) {
     if (reservationDate < today) {
       throw new DomainError(
         'INVALID_DATE',
-        'Reservation date must be in the future'
+        'Reservation date must be today or in the future'
       )
     }
   }
+}
+
+async function hasReservationConflict ({
+  reservationId = null,
+  roomId,
+  date,
+  startTime,
+  endTime
+}) {
+  const start = toDateTime(date, startTime)
+  const end = toDateTime(date, endTime)
+
+  const query = {
+    roomId: new ObjectId(roomId),
+    date,
+    status: { $ne: 'Cancelled' }
+  }
+
+  if (reservationId) {
+    query._id = { $ne: new ObjectId(reservationId) }
+  }
+
+  const existing =
+    await reservationsCollection.getReservations(query)
+
+  return existing.some(r => {
+    const existingStart = toDateTime(r.date, r.startTime)
+    const existingEnd = toDateTime(r.date, r.endTime)
+
+    return start < existingEnd && end > existingStart
+  })
+}
+
+function toDateTime (date, time) {
+  const [h, m] = time.split(':').map(Number)
+  const d = new Date(date)
+  d.setHours(h, m, 0, 0)
+  return d
 }

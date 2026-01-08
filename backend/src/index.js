@@ -5,6 +5,7 @@
  */
 import app from './app.js'
 import { connectToDb } from './db/mongo.js'
+import '../src/utils/reservationStatus.job.js' // Start reservation status job
 
 const PORT = process.env.PORT || 3000
 
