@@ -1,176 +1,176 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Tab, Tabs, Button, Badge } from 'react-bootstrap'
+import { useEffect, useState } from 'react'
+import { apiFetch } from '../api' 
 
-export default function StudySessions() {
-  const SESSIONS_ENDPOINT = '/api/study-sessions'
-  const ROOMS_ENDPOINT = '/api/study-rooms'
-
-  // Replace this with your actual authentication context later
-  const currentUser = {
-    _id: "REPLACE_WITH_REAL_USER_ID", 
-    role: "student", // or "admin"
-    name: "Test User"
-  }
-
+export default function AdminStudySessions() {
   const [sessions, setSessions] = useState([])
-  const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [currentUser, setCurrentUser] = useState(null)
+  const [msg, setMsg] = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const [form, setForm] = useState({})
 
-  const [activeTab, setActiveTab] = useState('all')
-  const [search, setSearch] = useState('')
-  const [type, setType] = useState('all')
-
-  // 1. FETCH ROOMS (For Linking)
   useEffect(() => {
-    async function fetchRooms() {
+    // Récupération de l'utilisateur connecté via la clé 'auth' du login
+    const authData = localStorage.getItem('auth') || localStorage.getItem('user');
+    if (authData) {
       try {
-        const res = await fetch(ROOMS_ENDPOINT)
-        if (res.ok) setRooms(await res.json())
-      } catch (err) {
-        console.error("Error loading rooms", err)
-      }
+        const parsed = JSON.parse(authData);
+        setCurrentUser(parsed.user || parsed);
+      } catch (e) { console.error("Erreur auth", e); }
     }
-    fetchRooms()
+    loadData();
   }, [])
 
-  // 2. FETCH SESSIONS (With filters)
-  const queryString = useMemo(() => {
-    const params = new URLSearchParams()
-    if (type !== 'all') params.set('type', type)
-    if (activeTab === 'mine') params.set('ownerId', currentUser._id)
-    return params.toString() ? `?${params}` : ''
-  }, [type, activeTab])
-
-  async function fetchSessions() {
+  const loadData = async () => {
     setLoading(true)
-    setError('')
     try {
-      const res = await fetch(`${SESSIONS_ENDPOINT}${queryString}`)
-      if (!res.ok) throw new Error(`HTTP Error ${res.status}`)
-      setSessions(await res.json())
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+      const data = await apiFetch('/api/study-sessions')
+      setSessions(data)
+    } catch (e) { setMsg('Erreur de chargement') }
+    setLoading(false)
+  }
+
+  const save = async () => {
+    if (!form.name || !form.subject || !form.date || !form.time) {
+      setMsg('Veuillez remplir tous les champs');
+      return;
     }
-  }
-
-  useEffect(() => {
-    fetchSessions()
-  }, [queryString])
-
-  // 3. LINKING FUNCTION (Room ID -> Room Name)
-  const getRoomName = (roomId) => {
-    if (!roomId) return null
-    const foundRoom = rooms.find(r => String(r._id) === String(roomId))
-    return foundRoom ? foundRoom.name : null
-  }
-
-  // 4. JOIN ACTION
-  async function handleJoin(sessionId) {
-    if (!currentUser._id) return alert("Error: Missing User ID")
+    const payload = { 
+      ...form, 
+      dateTime: `${form.date}T${form.time}`,
+      capacity: parseInt(form.capacity) || 10,
+      ownerId: currentUser?._id || currentUser?.id
+    };
 
     try {
-      const res = await fetch(`${SESSIONS_ENDPOINT}/${sessionId}/join`, {
+      const url = editing ? `/api/study-sessions/${editing._id}` : '/api/study-sessions';
+      await apiFetch(url, {
+        method: editing ? 'PUT' : 'POST',
+        body: JSON.stringify(payload)
+      });
+      setShowModal(false);
+      loadData();
+      setMsg(editing ? 'Modifié !' : 'Créé !');
+    } catch (e) { setMsg('Erreur sauvegarde'); }
+  }
+
+  const del = async (id) => {
+    if (currentUser?.role !== 'admin') return alert("Admin requis");
+    if (!window.confirm('Supprimer cette session ?')) return;
+    try {
+      await apiFetch(`/api/study-sessions/${id}`, { method: 'DELETE' });
+      loadData();
+    } catch (e) { setMsg('Erreur suppression'); }
+  }
+
+  const handleJoinToggle = async (session) => {
+    const userId = currentUser?._id || currentUser?.id;
+    if (!userId) return;
+    const isJoined = session.participants?.includes(userId);
+    const action = isJoined ? 'leave' : 'join';
+    try {
+      await apiFetch(`/api/study-sessions/${session._id}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser._id })
-      })
-
-      if (!res.ok) throw new Error("Error joining session")
-      
-      alert("Success! Joined session.")
-      fetchSessions() // Refresh to update participant count
-    } catch (err) {
-      alert(err.message)
-    }
+        body: JSON.stringify({ userId })
+      });
+      await loadData();
+    } catch (e) { setMsg("Erreur d'inscription"); }
   }
 
-  const filteredSessions = useMemo(() => {
-    return sessions.filter(s => s.name?.toLowerCase().includes(search.toLowerCase()))
-  }, [sessions, search])
+  const openModal = (s = null) => {
+    setEditing(s);
+    if (s) {
+      const d = new Date(s.dateTime);
+      setForm({ ...s, date: d.toISOString().split('T')[0], time: d.toTimeString().slice(0, 5) });
+    } else {
+      setForm({ name: '', subject: '', date: '', time: '', capacity: 10 });
+    }
+    setShowModal(true);
+  }
+
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
-    <div className="container mt-4">
+    <div className="p-3 bg-white rounded shadow-sm border">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Study Sessions</h1>
-        {currentUser.role === 'admin' && <Badge bg="danger">Admin Mode</Badge>}
+        <div>
+          <h5 className="fw-bold mb-0 text-primary">Manage Study Sessions</h5>
+          <small className="text-muted">Connecté : <b>{currentUser?.fullName}</b> ({currentUser?.role})</small>
+        </div>
+        <button onClick={() => openModal()} className="btn btn-primary btn-sm fw-bold px-3">+ Create Session</button>
       </div>
 
-      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k)} className="mb-3">
-        <Tab eventKey="all" title="All Sessions" />
-        <Tab eventKey="mine" title="My Sessions" />
-      </Tabs>
+      {msg && <div className="alert alert-info py-2 small">{msg}</div>}
 
-      <div className="d-flex gap-2 mb-4">
-        <input className="form-control" placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} />
-        <select className="form-select" value={type} onChange={e => setType(e.target.value)}>
-          <option value="all">All types</option>
-          <option value="physical">In-Person</option>
-          <option value="virtual">Virtual</option>
-        </select>
-        <Button onClick={fetchSessions} disabled={loading}>{loading ? '...' : 'Refresh'}</Button>
+      <div className="table-responsive">
+        <table className="table table-hover align-middle border-top">
+          <thead className="table-light small fw-bold text-secondary">
+            <tr>
+              <th>SESSION</th>
+              <th>SUBJECT</th>
+              <th className="text-center">CAPACITY</th>
+              <th className="text-end">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessions.map(s => {
+              const hasJoined = currentUser && s.participants?.includes(currentUser._id || currentUser.id);
+              return (
+                <tr key={s._id} className={hasJoined ? 'table-primary' : ''}>
+                  <td>
+                    <div className="fw-bold">{s.name} {hasJoined && "😊"}</div>
+                    <div className="small text-muted">{new Date(s.dateTime).toLocaleDateString()}</div>
+                  </td>
+                  <td>{s.subject}</td>
+                  <td className="text-center small font-monospace">{s.participants?.length || 0} / {s.capacity}</td>
+                  <td className="text-end">
+                    <button onClick={() => handleJoinToggle(s)} className={`btn btn-sm fw-bold me-2 ${hasJoined ? 'text-danger' : 'text-primary'}`}>
+                      {hasJoined ? 'LEAVE' : 'JOIN'}
+                    </button>
+                    <button onClick={() => openModal(s)} className="btn btn-link btn-sm text-secondary text-decoration-none fw-bold p-0 me-2">EDIT</button>
+                    {isAdmin && (
+                      <button onClick={() => del(s._id)} className="btn btn-link btn-sm text-danger text-decoration-none fw-bold p-0">DELETE</button>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      <div className="row g-4">
-        {filteredSessions.map(session => (
-          <div key={session._id} className="col-md-6 col-lg-4">
-            <div className="card h-100 shadow-sm border-0">
-              <div className="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 className="mb-0 text-primary">{session.name}</h5>
-                <Badge bg={session.type === 'virtual' ? 'info' : 'success'}>
-                  {session.type === 'virtual' ? 'Virtual' : 'In-Person'}
-                </Badge>
+      {showModal && (
+        <div className="modal show d-block shadow" style={{backgroundColor: 'rgba(0,0,0,0.5)'}}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0">
+              <div className="modal-header bg-dark text-white py-2">
+                <h6 className="modal-title fw-bold">{editing ? 'Edit Session' : 'New Session'}</h6>
+                <button onClick={() => setShowModal(false)} className="btn-close btn-close-white"></button>
               </div>
-
-              <div className="card-body">
-                <p className="mb-1"><strong>Subject:</strong> {session.subject}</p>
-
-                {/* Linking Room */}
-                {session.type === 'physical' ? (
-                   <p className="mb-1">
-                     📍 <strong>Location:</strong> {getRoomName(session.roomId) || <span className="text-muted fst-italic">To be defined</span>}
-                   </p>
-                ) : (
-                   <p className="mb-1">💻 <strong>Location:</strong> Online</p>
-                )}
-
-                <p className="mb-1">👤 <strong>Organizer:</strong> {session.ownerName || session.ownerId || 'Unknown'}</p>
-                <p className="text-muted small">📅 {new Date(session.dateTime).toLocaleString()}</p>
-
-                <div className="mt-3 mb-3">
-                  <div className="d-flex justify-content-between small mb-1">
-                    <span>Participants</span>
-                    <span>{session.participants?.length || 0} / {session.capacity || 10}</span>
-                  </div>
-                  <div className="progress" style={{height: '6px'}}>
-                    <div className="progress-bar bg-success" style={{width: `${((session.participants?.length || 0) / (session.capacity || 10)) * 100}%`}}></div>
-                  </div>
+              <div className="modal-body p-4">
+                <label className="small fw-bold text-muted mb-1">SESSION NAME</label>
+                <input className="form-control mb-3" value={form.name || ''} onChange={e => setForm({...form, name: e.target.value})} />
+                
+                <label className="small fw-bold text-muted mb-1">SUBJECT</label>
+                <input className="form-control mb-3" value={form.subject || ''} onChange={e => setForm({...form, subject: e.target.value})} />
+                
+                <div className="row g-2 mb-3">
+                  <div className="col"><label className="small fw-bold text-muted mb-1">DATE</label><input type="date" className="form-control" value={form.date || ''} onChange={e => setForm({...form, date: e.target.value})} /></div>
+                  <div className="col"><label className="small fw-bold text-muted mb-1">TIME</label><input type="time" className="form-control" value={form.time || ''} onChange={e => setForm({...form, time: e.target.value})} /></div>
                 </div>
 
-                <div className="d-flex justify-content-between mt-auto pt-3 border-top">
-                    {session.ownerId !== currentUser._id ? (
-                        <Button variant="outline-primary" size="sm" onClick={() => handleJoin(session._id)}>
-                            Join
-                        </Button>
-                    ) : (
-                        <span className="badge bg-secondary align-self-center">You are organizing</span>
-                    )}
-
-                    {currentUser.role === 'admin' && (
-                        <Button variant="danger" size="sm" onClick={() => alert("Admin Delete Function")}>
-                            Delete
-                        </Button>
-                    )}
-                </div>
+                <label className="small fw-bold text-muted mb-1">MAX CAPACITY</label>
+                <input type="number" className="form-control" value={form.capacity || ''} onChange={e => setForm({...form, capacity: e.target.value})} />
+              </div>
+              <div className="modal-footer bg-light border-0">
+                <button onClick={() => setShowModal(false)} className="btn btn-sm btn-link text-muted text-decoration-none">Cancel</button>
+                <button onClick={save} className="btn btn-sm btn-dark px-4 fw-bold">Save Session</button>
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
