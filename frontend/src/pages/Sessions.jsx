@@ -56,7 +56,9 @@ export default function Sessions() {
     // 1. Vérifier conflit avec une autre SESSION
     const sessionConflict = sessions.find(s => {
         if (currentSessionId && s._id === currentSessionId) return false;
-        const sRoomId = s.room?._id || s.room;
+        // Gérer si room est un objet ou un ID string
+        const sRoomId = s.room && typeof s.room === 'object' ? s.room._id : s.room;
+        
         if (sRoomId !== roomId) return false;
         const sStart = new Date(s.dateTime);
         const sEnd = new Date(sStart.getTime() + (s.duration || 60) * 60000);
@@ -67,7 +69,9 @@ export default function Sessions() {
 
     // 2. Vérifier conflit avec une RÉSERVATION (Admin)
     const reservationConflict = reservations.find(r => {
-        const rRoomId = r.room?._id || r.room;
+        // Gérer si room est un objet ou un ID string
+        const rRoomId = r.room && typeof r.room === 'object' ? r.room._id : r.room;
+
         if (rRoomId !== roomId) return false;
         if (r.status === 'Cancelled') return false;
 
@@ -104,19 +108,22 @@ export default function Sessions() {
         const conflictReason = checkRoomConflict(finalRoomId, form.date, form.time, finalDuration, editing?._id);
         
         if (conflictReason) {
-            // Affiche l'erreur et ARRÊTE TOUT (return)
             setMsg(`Error: Room is already reserved by ${conflictReason}`);
             return; 
         }
     }
 
+    // CORRECTION : Création explicite du payload pour éviter d'envoyer _id, __v, etc.
     const payload = { 
-      ...form, 
+      name: form.name,
+      subject: form.subject,
+      description: form.description,
       dateTime: `${form.date}T${form.time}`,
       capacity: parseInt(form.capacity) || 10,
       duration: finalDuration,
       public: form.public !== false,
       ownerId: form.ownerId,
+      type: form.type,
       location: finalLocation,
       room: finalRoomId, 
       zoomLink: finalZoomLink
@@ -128,14 +135,16 @@ export default function Sessions() {
         method: editing ? 'PUT' : 'POST',
         body: JSON.stringify(payload)
       });
-      setShowModal(false); // Ferme la modale uniquement si succès
+      setShowModal(false);
       loadData();
       setMsg(editing ? 'Session updated!' : 'Session created successfully!');
-    } catch (e) { setMsg('Error saving session'); }
+    } catch (e) { 
+        console.error(e);
+        setMsg('Error saving session'); 
+    }
   }
 
   const del = async (session) => {
-    // SÉCURITÉ : Admin OU Propriétaire seulement
     const userId = currentUser?._id || currentUser?.id;
     if (!isAdmin && session.ownerId !== userId) {
         alert("You can only delete your own sessions.");
@@ -165,19 +174,24 @@ export default function Sessions() {
 
   const openModal = (s = null) => {
     setEditing(s);
-    setMsg(''); // Reset des messages d'erreur à l'ouverture
+    setMsg('');
     if (s) {
       const d = new Date(s.dateTime);
+      
+      // CORRECTION : Gestion si room/owner sont des objets (population) ou des strings
+      const roomId = s.room && typeof s.room === 'object' ? s.room._id : s.room;
+      const ownerId = s.ownerId && typeof s.ownerId === 'object' ? s.ownerId._id : s.ownerId;
+
       setForm({ 
         ...s, 
         date: d.toISOString().split('T')[0], 
         time: d.toTimeString().slice(0, 5),
         duration: s.duration || 60,
-        ownerId: s.ownerId || '',
+        ownerId: ownerId || '', 
         type: s.type || 'group',
         zoomLink: s.zoomLink || '',
         location: s.location || '',
-        room: s.room?._id || s.room || '', 
+        room: roomId || '', 
         description: s.description || '',
         public: s.public !== false
       });
@@ -217,7 +231,6 @@ export default function Sessions() {
         </button>
       </div>
 
-      {/* ZONE DE MESSAGE (Rouge si erreur, Bleu si info) */}
       {msg && <div className={`alert py-2 small shadow-sm ${msg.includes('Error') ? 'alert-danger' : 'alert-info'}`}>{msg}</div>}
 
       <div className="card border-0 shadow-none">
@@ -239,7 +252,6 @@ export default function Sessions() {
                 const currentCount = s.participants?.length || 0;
                 const dateObj = new Date(s.dateTime);
 
-                // --- PERMISSIONS ---
                 const isOwner = s.ownerId === userId;
                 const canManage = isAdmin || isOwner;
 
@@ -270,7 +282,6 @@ export default function Sessions() {
                         {hasJoined ? 'Leave' : 'Join'}
                       </button>
 
-                      {/* Visibilité boutons Edit/Delete */}
                       {canManage && (
                           <>
                             <button onClick={() => openModal(s)} className="btn btn-sm btn-light rounded-circle me-1" title="Edit">
@@ -290,7 +301,6 @@ export default function Sessions() {
         </div>
       </div>
 
-      {/* MODALE */}
       {showModal && (
         <div className="modal show d-block" style={{backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)'}}>
           <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -303,7 +313,6 @@ export default function Sessions() {
                 
                 <div className="mb-3">
                     <label className="small fw-bold text-danger mb-1">OWNER ID</label>
-                    {/* ReadOnly si étudiant */}
                     <input 
                         className={`form-control ${isAdmin ? 'bg-light' : 'bg-white text-muted'} border-danger`} 
                         value={form.ownerId || ''} 
