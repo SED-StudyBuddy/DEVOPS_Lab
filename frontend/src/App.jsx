@@ -7,7 +7,7 @@ import RoomsPage from './pages/Rooms.jsx'
 import ProfilePage from './pages/Profile.jsx'
 import AboutPage from './pages/About.jsx'
 import AdminPage from './pages/Admin.jsx'
-import MySessionsPage from './pages/MySessions.jsx'
+import MyReservationsPage from './pages/MyReservations.jsx'
 import RegistrationPage from './pages/Registration.jsx'
 import LoginPage from './pages/Login.jsx'
 import AdminRoute from './components/AdminRoute'
@@ -22,7 +22,7 @@ export default function App () {
       <Route path="/profile" element={<LoggedUserRoute><ProfilePage /></LoggedUserRoute>} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>}/>
-      <Route path="/my-sessions" element={<LoggedUserRoute><MySessionsPage /></LoggedUserRoute>} />
+      <Route path="/my-reservations" element={<LoggedUserRoute><MyReservationsPage /></LoggedUserRoute>} />
       <Route path="/register" element={<RegistrationPage />} />
       <Route path="/login" element={<LoginPage />} />
     </Routes></>

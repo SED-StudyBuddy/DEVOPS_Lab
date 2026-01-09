@@ -4,7 +4,7 @@ import ReservationModal from '../components/ReservationModal.jsx'
 import ReservationTable from '../components/MySessions-table.jsx'
 import { getStoredUser } from '../api.js'
 
-export default function MySessionsPage() {
+export default function MyReservationsPage() {
   const [reservations, setReservations] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState(null)
