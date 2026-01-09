@@ -3,7 +3,6 @@ import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col'
 import Button from 'react-bootstrap/Button'
 import Card from 'react-bootstrap/Card'
-import { redirect } from 'react-router-dom'
 
 export default function HomePage() {
   return (
@@ -19,10 +18,10 @@ export default function HomePage() {
               </p>
 
               <div className="d-flex gap-2 mt-4">
-                <Button variant="primary" size="lg" onClick={() => redirect('/rooms')}>
+                <Button variant="primary" size="lg" onClick={() => window.location.href = '/rooms'}>
                   Find a Study Room
                 </Button>
-                <Button variant="outline-primary" size="lg" onClick={() => redirect('/sessions')}>
+                <Button variant="outline-primary" size="lg" onClick={() => window.location.href = '/sessions'}>
                   Create a Study Session
                 </Button>
               </div>
