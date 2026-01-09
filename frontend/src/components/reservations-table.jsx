@@ -126,12 +126,11 @@ return (
     <>
   <div className="d-flex align-items-start gap-2 mb-3 px-5">
 
-  {/* User search + clear */}
   <div className="d-flex align-items-start" style={{ minWidth: 350 }}>
     <div className="position-relative flex-grow-1">
       <input
         className="form-control"
-        placeholder="Search user by name"
+        placeholder="Search room by user"
         value={userSearchText}
         onChange={e => {
           setUserSearchText(e.target.value)
