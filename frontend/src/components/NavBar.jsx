@@ -42,7 +42,7 @@ export default function NavBar () {
             
             { 
               isLoggedIn && !isAdmin && (
-                <Nav.Link as={Link} to="/my-sessions">My Sessions</Nav.Link>
+                <Nav.Link as={Link} to="/my-sessions">My Reservations</Nav.Link>
               )
             }
             <Nav.Link as={Link} to="/about">About</Nav.Link>

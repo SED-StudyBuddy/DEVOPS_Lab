@@ -2,12 +2,10 @@ import { useEffect, useState, useMemo } from 'react'
 import { Container, Tabs, Tab } from 'react-bootstrap'
 import ReservationModal from '../components/ReservationModal.jsx'
 import ReservationTable from '../components/MySessions-table.jsx'
-import SessionCards from '../components/StudySessions-cards.jsx'
 import { getStoredUser } from '../api.js'
 
 export default function MySessionsPage() {
   const [reservations, setReservations] = useState([])
-  const [sessions, setSessions] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [selectedReservation, setSelectedReservation] = useState(null)
   const [rooms, setRooms] = useState([])
@@ -15,7 +13,6 @@ export default function MySessionsPage() {
   useEffect(() => {
     const user = getStoredUser()
     fetch(`/api/reservations?user=${user._id}`).then(r => r.json()).then(setReservations)
-    fetch('/api/study-sessions').then(r => r.json()).then(setSessions) //still need to filter by user on backend/database
     fetch('/api/study-rooms').then(r => r.json()).then(setRooms)
   }, [])
 
@@ -31,24 +28,13 @@ const isReservationUpcoming = (date, startTime) => {
   return startDateTime >= now
 }
 
-const isSessionUpcoming = date => {
-  const sessionDate = new Date(date)
-  return sessionDate >= now
-}
-
 const splitReservationsList = list => ({
   upcoming: list.filter(i => isReservationUpcoming(i.date, i.startTime)),
   past: list.filter(i => !isReservationUpcoming(i.date, i.startTime))
 })
 
-const splitSessionsList = list => ({
-  upcoming: list.filter(i => isSessionUpcoming(i.date)),
-  past: list.filter(i => !isSessionUpcoming(i.date))
-})
-
 
   const reservationsByTime = useMemo(() => splitReservationsList(reservations), [reservations])
-  const sessionsByTime = useMemo(() => splitSessionsList(sessions), [sessions])
 
   const saveReservation = async data => {
     await fetch(`/api/reservations/${data._id}`, {
@@ -81,27 +67,7 @@ const onCancel = async id => {
 
   return (
     <Container className="mt-4">
-      <h1 className="mb-4">My Sessions</h1>
-
-      <Tabs defaultActiveKey="sessions" className="mb-4">
-        <Tab eventKey="sessions" title="My Study Sessions">
-          <Tabs defaultActiveKey="upcoming" className="mt-3">
-            <Tab eventKey="upcoming" title="Upcoming">
-              <SessionCards
-                sessions={sessionsByTime.upcoming}
-                onEdit={id => console.log('edit session', id)}
-                onCancel={id => console.log('cancel session', id)}
-                onLeave={id => console.log('leave session', id)}
-              />
-            </Tab>
-
-            <Tab eventKey="past" title="Past">
-              <SessionCards sessions={sessionsByTime.past} />
-            </Tab>
-          </Tabs>
-        </Tab>
-
-        <Tab eventKey="reservations" title="My Room Reservations">
+      <h1 className="mb-4">My Reservations</h1>
           <Tabs defaultActiveKey="upcoming" className="mt-3">
             <Tab eventKey="upcoming" title="Upcoming">
               <ReservationTable
@@ -122,8 +88,6 @@ const onCancel = async id => {
               />
             </Tab>
           </Tabs>
-        </Tab>
-      </Tabs>
 
       <ReservationModal
         key={selectedReservation?._id ?? null}
