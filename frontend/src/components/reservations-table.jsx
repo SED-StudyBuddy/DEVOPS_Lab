@@ -3,17 +3,21 @@ import Table from 'react-bootstrap/Table'
 import Button from 'react-bootstrap/Button'
 import ReservationModal from './ReservationModal'
 import { Badge } from 'react-bootstrap'
+import { InputGroup, Dropdown } from 'react-bootstrap'
+import Form from 'react-bootstrap/Form'
 
 export default function ReservationsTable() {
   const [rooms, setRooms] = useState([])
   const [reservations, setReservations] = useState([])
 const [showModal, setShowModal] = useState(false)
 const [selectedReservation, setSelectedReservation] = useState(null)
-const [userSearch, setUserSearch] = useState('')
 const [roomFilter, setRoomFilter] = useState('all')
 const [dateFilter, setDateFilter] = useState('')
 const [timeFilter, setTimeFilter] = useState('')
 const [users, setUsers] = useState([])
+const [userSearchText, setUserSearchText] = useState('')
+const [selectedUserId, setSelectedUserId] = useState(null)
+const [showUserDropdown, setShowUserDropdown] = useState(false)
 
 useEffect(() => {
   fetch('/api/users')
@@ -66,6 +70,7 @@ const saveReservation = async data => {
     try {
       const params = new URLSearchParams()
 
+      if (selectedUserId) params.append('user', selectedUserId)
       if (roomFilter !== 'all') params.append('roomId', roomFilter)
       if (dateFilter) params.append('date', dateFilter)
       if (timeFilter) params.append('time', timeFilter)
@@ -86,7 +91,7 @@ const saveReservation = async data => {
   fetchReservations()
 
   return () => controller.abort()
-}, [userSearch, roomFilter, dateFilter, timeFilter])
+}, [selectedUserId, roomFilter, dateFilter, timeFilter])
 
   const roomMap = useMemo(() => {
     return Object.fromEntries(
@@ -109,51 +114,97 @@ const saveReservation = async data => {
   }))
 }, [reservations, roomMap, userMap])
 
-const filteredReservations = useMemo(() => {
-  const q = userSearch.toLowerCase()
-
-  return reservationsWithNames.filter(r =>
-    r.userName.toLowerCase().includes(q)
+const filteredUsers = useMemo(() => {
+  if (!userSearchText) return users
+  return users.filter(u =>
+    u.fullName.toLowerCase().includes(userSearchText.toLowerCase())
   )
-}, [reservationsWithNames, userSearch])
+}, [users, userSearchText])
+
 
 return (
     <>
-  <div className="d-flex gap-2 mb-3 px-5">
-    <input
-      className="form-control"
-      placeholder="Search by user"
-      value={userSearch}
-      onChange={e => setUserSearch(e.target.value)}
-    />
+  <div className="d-flex align-items-start gap-2 mb-3 px-5">
 
-    <select
-      className="form-select"
-      value={roomFilter}
-      onChange={e => setRoomFilter(e.target.value)}
-    >
-      <option value="all">All rooms</option>
-        {rooms.map(room => (
-          <option key={room._id} value={room._id}>
-           {room.name}
-          </option>
-      ))}
-    </select>
-
+  {/* User search + clear */}
+  <div className="d-flex align-items-start" style={{ minWidth: 350 }}>
+    <div className="position-relative flex-grow-1">
       <input
-        type="date"
         className="form-control"
-        value={dateFilter}
-        onChange={e => setDateFilter(e.target.value)}
+        placeholder="Search user by name"
+        value={userSearchText}
+        onChange={e => {
+          setUserSearchText(e.target.value)
+          setShowUserDropdown(true)
+          setSelectedUserId(null)
+        }}
+        onFocus={() => setShowUserDropdown(true)}
       />
 
-      <input
-        type="time"
-        className="form-control"
-        value={timeFilter}
-        onChange={e => setTimeFilter(e.target.value)}
-      />
+      {showUserDropdown && filteredUsers.length > 0 && (
+        <div
+          className="list-group position-absolute w-100"
+          style={{ maxHeight: 250, overflowY: 'auto', zIndex: 1000 }}
+        >
+          {filteredUsers.map(user => (
+            <button
+              key={user._id}
+              type="button"
+              className="list-group-item list-group-item-action"
+              onClick={() => {
+                setSelectedUserId(user._id)
+                setUserSearchText(user.fullName)
+                setShowUserDropdown(false)
+              }}
+            >
+              {user.fullName}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
+
+    <Button
+      variant="outline-danger"
+      className="ms-2 me-3"
+      onClick={() => {
+        setSelectedUserId(null)
+        setUserSearchText('')
+      }}
+    >
+      Clear
+    </Button>
+  </div>
+
+  <select
+    className="form-select"
+    value={roomFilter}
+    onChange={e => setRoomFilter(e.target.value)}
+  >
+    <option value="all">All rooms</option>
+    {rooms.map(room => (
+      <option key={room._id} value={room._id}>
+        {room.name}
+      </option>
+    ))}
+  </select>
+
+  <input
+    type="date"
+    className="form-control"
+    value={dateFilter}
+    onChange={e => setDateFilter(e.target.value)}
+  />
+
+  <input
+    type="time"
+    className="form-control"
+    value={timeFilter}
+    onChange={e => setTimeFilter(e.target.value)}
+  />
+
+</div>
+
       <Table striped bordered hover>
         <thead>
           <tr>
@@ -167,7 +218,7 @@ return (
           </tr>
         </thead>
         <tbody>
-          {filteredReservations.map(r => (
+          {reservationsWithNames.map(r => (
             <tr key={r._id}>
               <td>{r.userName}</td>
               <td>{r.roomName}</td>

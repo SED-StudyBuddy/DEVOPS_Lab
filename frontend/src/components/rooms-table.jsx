@@ -133,7 +133,6 @@ useEffect(() => {
       <Table striped bordered hover>
         <thead>
           <tr>
-            <th>Id</th>
             <th>Name</th>
             <th>Capacity</th>
             <th>Equipment</th>
@@ -144,7 +143,6 @@ useEffect(() => {
         <tbody>
           {rooms.map(room => (
             <tr key={room._id}>
-              <td>{room._id}</td>
               <td>{room.name}</td>
               <td>{room.capacity}</td>
               <td>{room.equipment.join(', ')}</td>
